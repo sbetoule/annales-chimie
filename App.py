@@ -3,10 +3,25 @@ import pandas as pd
 
 st.set_page_config(page_title="Annales Lab", layout="wide")
 
-URL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsADsmsMnYgQXIUlU25_FlKrtTffM5XOL69taw9Pco8AHV4suIUtT0tg384XBtBAo28qGKGbtSJtIy/pub?gid=0&single=true&output=csv"
+# --- URLS DES FLUX ---
+URL_DATA = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsADsmsMnYgQXIUlU25_FlKrtTffM5XOL69taw9Pco8AHV4suIUtT0tg384XBtBAo28qGKGbtSJtIy/pub?gid=0&single=true&output=csv"
+URL_THEMES = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsADsmsMnYgQXIUlU25_FlKrtTffM5XOL69taw9Pco8AHV4suIUtT0tg384XBtBAo28qGKGbtSJtIy/pub?gid=1733310474&single=true&output=csv"
+URL_NIVEAUX = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsADsmsMnYgQXIUlU25_FlKrtTffM5XOL69taw9Pco8AHV4suIUtT0tg384XBtBAo28qGKGbtSJtIy/pub?gid=1879771001&single=true&output=csv"
 
-THEMES_LISTE = ["alcools", "RMN", "IR", "énolates", "stéréochimie", "cinétique", "alcène"]
-DIFF_LISTE = ["Peu importe", "Facile", "Moyen", "Difficile", "HP"]
+@st.cache_data(ttl=60)
+def recuperer_listes(url_themes, url_niveaux):
+    # Lecture des thèmes depuis l'onglet
+    df_t = pd.read_csv(url_themes, header=None)
+    themes = df_t[0].dropna().unique().tolist()
+    
+    # Lecture des niveaux depuis l'onglet
+    df_n = pd.read_csv(url_niveaux, header=None)
+    niveaux = ["Peu importe"] + df_n[0].dropna().unique().tolist()
+    
+    return themes, niveaux
+
+# Chargement dynamique des listes
+THEMES_LISTE, DIFF_LISTE = recuperer_listes(URL_THEMES, URL_NIVEAUX)
 
 # --- INITIALISATION DE LA MÉMOIRE ---
 if 'resultats_recherche' not in st.session_state:
