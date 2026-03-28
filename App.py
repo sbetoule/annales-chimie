@@ -10,13 +10,16 @@ URL_NIVEAUX = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsADsmsMnYgQXIUl
 
 @st.cache_data(ttl=60)
 def recuperer_listes(url_themes, url_niveaux):
-    # Lecture des thèmes depuis l'onglet
+    # Lecture des thèmes (Ligne 1)
     df_t = pd.read_csv(url_themes, header=None)
-    themes = df_t[0].dropna().unique().tolist()
+    # .iloc[0] récupère la première ligne, .tolist() en fait une liste
+    themes = df_t.iloc[0].dropna().astype(str).tolist()
     
-    # Lecture des niveaux depuis l'onglet
+    # Lecture des niveaux (Ligne 1)
     df_n = pd.read_csv(url_niveaux, header=None)
-    niveaux = ["Peu importe"] + df_n[0].dropna().unique().tolist()
+    # On récupère la ligne 1 et on ajoute "Peu importe" au début
+    niveaux_bruts = df_n.iloc[0].dropna().astype(str).tolist()
+    niveaux = ["Peu importe"] + niveaux_bruts
     
     return themes, niveaux
 
