@@ -3,6 +3,24 @@ import pandas as pd
 
 st.set_page_config(page_title="Annales Lab", layout="wide")
 
+# --- STYLE CSS PERSONNALISÉ (Couleur du curseur et mise en page) ---
+st.markdown("""
+    <style>
+        /* Change la couleur rouge par défaut du slider en bleu professionnel */
+        .stSlider [data-baseweb="slider"] div {
+            background-color: #1f77b4 !important;
+        }
+        /* Change la couleur du texte des valeurs du slider */
+        div[data-testid="stThumbValue"] {
+            color: #1f77b4 !important;
+        }
+        /* Ajustement pour les colonnes sur mobile */
+        [data-testid="column"] {
+            min-width: 250px;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
 # --- URLS DES FLUX ---
 URL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsADsmsMnYgQXIUlU25_FlKrtTffM5XOL69taw9Pco8AHV4suIUtT0tg384XBtBAo28qGKGbtSJtIy/pub?gid=0&single=true&output=csv"
 URL_THEMES = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsADsmsMnYgQXIUlU25_FlKrtTffM5XOL69taw9Pco8AHV4suIUtT0tg384XBtBAo28qGKGbtSJtIy/pub?gid=1733310474&single=true&output=csv"
@@ -14,13 +32,13 @@ def recuperer_listes(url_themes, url_niveaux):
         df_t = pd.read_csv(url_themes, header=None)
         themes = df_t.iloc[0].dropna().astype(str).tolist()
         df_n = pd.read_csv(url_niveaux, header=None)
-        niveaux_bruts = df_n.iloc[0].dropna().astype(str).tolist()
-        niveaux = ["Peu importe"] + niveaux_bruts
+        # On garde l'ordre brut de l'onglet Excel pour le curseur
+        niveaux = df_n.iloc[0].dropna().astype(str).tolist()
         return themes, niveaux
     except:
-        return ["Erreur"], ["Peu importe"]
+        return ["Erreur"], ["Facile", "Moyen", "Difficile"]
 
-THEMES_LISTE, DIFF_LISTE = recuperer_listes(URL_THEMES, URL_NIVEAUX)
+THEMES_LISTE, NIVEAUX_ORDRE = recuperer_listes(URL_THEMES, URL_NIVEAUX)
 
 if 'resultats_recherche' not in st.session_state:
     st.session_state.resultats_recherche = None
@@ -42,7 +60,7 @@ def charger_donnees(url):
             questions = questions[questions['Thème'].astype(str).str.lower() != "thème"]
             sujets.append({
                 "nom": str(nom_sujet).strip(),
-                "annee": str(annee).strip() if pd.notna(annee) else "N/A",
+                "annee": str(annee).strip() if pd.notna(annee) else "0",
                 "questions": questions,
                 "label": f"{str(nom_sujet).strip()} ({str(annee).strip()})"
             })
@@ -78,83 +96,69 @@ with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
     st.divider()
     st.markdown("⚠️ *La liste des thématiques correspond au contenu des **programmes de CPGE**. Des niveaux de difficulté sont indiqués par rapport à un élève de CPGE. Ces derniers sont purement indicatifs et propres à l'interprétation des concepteurs de ce site.*")
 
-# --- DANS LA BARRE LATÉRALE (FILTRES) ---
+# --- BARRE LATÉRALE (FILTRES) ---
 with st.sidebar:
     st.header("⚙️ Paramètres")
     criteres = []
-    
-    # On définit l'ordre logique des niveaux pour le curseur
-    # On retire "Peu importe" car le curseur complet joue ce rôle
-    NIVEAUX_ORDRE = [n for n in DIFF_LISTE if n != "Peu importe"]
     
     for n in range(st.session_state.nb_filtres):
         st.subheader(f"Filtre {n+1}")
         t = st.selectbox(f"Thème", THEMES_LISTE, key=f"t_{n}")
         
-        # Remplacement du selectbox par un select_slider (curseur de plage)
-        # La valeur par défaut (value) sélectionne tout l'éventail
+        # Initialisation par défaut entre "Facile" et "Difficile"
+        start_val = "Facile" if "Facile" in NIVEAUX_ORDRE else NIVEAUX_ORDRE[0]
+        end_val = "Difficile" if "Difficile" in NIVEAUX_ORDRE else NIVEAUX_ORDRE[-1]
+        
         d_range = st.select_slider(
             f"Plage de difficulté",
             options=NIVEAUX_ORDRE,
-            value=(NIVEAUX_ORDRE[0], NIVEAUX_ORDRE[-1]),
+            value=(start_val, end_val),
             key=f"d_{n}"
         )
         
         m = st.number_input(f"Quantité", min_value=1, value=1, key=f"m_{n}")
         criteres.append({"theme": t, "diff_range": d_range, "min": m})
-
+    
     if st.button("➕ Ajouter un filtre"):
         st.session_state.nb_filtres += 1
         st.rerun()
     if st.button("🗑️ Supprimer le dernier filtre") and st.session_state.nb_filtres > 1:
         st.session_state.nb_filtres -= 1
         st.rerun()
-        
 
 # --- BOUTON DE RECHERCHE ---
-
 if st.button("🚀 Lancer la recherche", type="primary", use_container_width=True):
     data = charger_donnees(URL_CSV)
     trouves = []
-    
     for s in data:
         q = s['questions']
         valid = True
         stats = []
         for c in criteres:
-            # 1. Filtre Thème
-            mask_theme = q['Thème'].astype(str).str.contains(c['theme'], case=False, na=False)
-            
-            # 2. Filtre Plage de Difficulté
-            # On récupère l'index des bornes choisies
+            # Calcul de la plage acceptée
             idx_min = NIVEAUX_ORDRE.index(c['diff_range'][0])
             idx_max = NIVEAUX_ORDRE.index(c['diff_range'][1])
             niveaux_acceptes = NIVEAUX_ORDRE[idx_min : idx_max + 1]
             
+            mask_theme = q['Thème'].astype(str).str.contains(c['theme'], case=False, na=False)
             mask_diff = q['Difficulté'].astype(str).str.strip().isin(niveaux_acceptes)
             
-            mask_final = mask_theme & mask_diff
-            count = len(q[mask_final])
-            
+            count = len(q[mask_theme & mask_diff])
             stats.append(f"{c['theme']} : {count}")
+            
             if count < c['min']:
                 valid = False
                 break
         
         if valid:
             s['stats'] = " | ".join(stats)
-            # On stocke aussi la plage pour le surlignage plus bas
-            s['niveaux_acceptes'] = niveaux_acceptes 
             trouves.append(s)
     
-    # --- AJOUT DU TRI PAR ANNÉE (DÉCROISSANT) ---
-    # On trie la liste 'trouves' en fonction de la clé 'annee'
-    # On utilise pd.to_numeric pour éviter les erreurs si une année est mal saisie
+    # TRI PAR ANNÉE (DÉCROISSANT)
     trouves.sort(key=lambda x: pd.to_numeric(x['annee'], errors='coerce'), reverse=True)
-    
     st.session_state.resultats_recherche = trouves
 
-# --- AFFICHAGE ---
+# --- AFFICHAGE DES RÉSULTATS ---
 if st.session_state.resultats_recherche is not None:
     res = st.session_state.resultats_recherche
     if res:
@@ -174,15 +178,12 @@ if st.session_state.resultats_recherche is not None:
         sujet_choisi = next(r for r in res if r['label'] == choix_label)
         df_details = sujet_choisi['questions']
         
-        # --- FONCTION DE MISE EN COULEUR CORRIGÉE ---
         def highlight_rows(row):
             for c in criteres:
-                # On définit les niveaux acceptés pour ce filtre
                 idx_min = NIVEAUX_ORDRE.index(c['diff_range'][0])
                 idx_max = NIVEAUX_ORDRE.index(c['diff_range'][1])
                 niveaux_acceptes = NIVEAUX_ORDRE[idx_min : idx_max + 1]
                 
-                # Vérification Thème ET Difficulté (dans la plage)
                 theme_match = c['theme'].lower() in str(row['Thème']).lower()
                 diff_match = str(row['Difficulté']).strip() in niveaux_acceptes
                 
@@ -191,7 +192,7 @@ if st.session_state.resultats_recherche is not None:
             return [''] * len(row)
 
         st.subheader(f"Détails : {choix_label}")
-        st.markdown("*Les lignes surlignées en bleu correspondent à vos critères.*")
+        st.markdown("*Les lignes surlignées en bleu correspondent à vos critères de recherche.*")
         
         styled_df = df_details.style.apply(highlight_rows, axis=1)
         st.dataframe(styled_df, use_container_width=True, hide_index=True)
