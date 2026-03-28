@@ -35,7 +35,6 @@ def charger_donnees(url):
         for i in range(1, df.shape[1], 4):
             nom_sujet = df.iloc[1, i]
             if pd.isna(nom_sujet) or str(nom_sujet).strip() == "": continue
-            auteur = df.iloc[0, i]
             annee = df.iloc[2, i]
             questions = df.iloc[4:, i : i+4].copy()
             questions.columns = ['Numéro', 'Thème', 'Difficulté', 'Remarque']
@@ -43,7 +42,6 @@ def charger_donnees(url):
             questions = questions[questions['Thème'].astype(str).str.lower() != "thème"]
             sujets.append({
                 "nom": str(nom_sujet).strip(),
-                "auteur": str(auteur).strip() if pd.notna(auteur) else "Inconnu",
                 "annee": str(annee).strip() if pd.notna(annee) else "N/A",
                 "questions": questions,
                 "label": f"{str(nom_sujet).strip()} ({str(annee).strip()})"
@@ -77,9 +75,9 @@ with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
         st.markdown("**3. Analyse**")
         st.info("Sélectionnez un sujet en bas de la page : les questions ciblées apparaîtront en couleur.")
     
-    st.divider() # Petite ligne de séparation
+    st.divider()
     st.markdown("⚠️ *La liste des thématiques correspond au contenu des **programmes de CPGE**. Des niveaux de difficulté sont indiqués par rapport à un élève de CPGE. Ces derniers sont purement indicatifs et propres à l'interprétation des concepteurs de ce site.*")
-    
+
 # --- BARRE LATÉRALE ---
 with st.sidebar:
     st.header("⚙️ Paramètres")
@@ -125,7 +123,12 @@ if st.session_state.resultats_recherche is not None:
     res = st.session_state.resultats_recherche
     if res:
         st.success(f"✅ {len(res)} sujet(s) trouvé(s)")
-        df_res = pd.DataFrame([{"Sujet": r['nom'], "Année": r['annee'], "Auteur": r['auteur'], "Détails": r['stats']} for r in res])
+        # L'auteur a été retiré ici
+        df_res = pd.DataFrame([{
+            "Sujet": r['nom'], 
+            "Année": r['annee'], 
+            "Détails": r['stats']
+        } for r in res])
         st.table(df_res)
         
         st.divider()
@@ -135,7 +138,6 @@ if st.session_state.resultats_recherche is not None:
         sujet_choisi = next(r for r in res if r['label'] == choix_label)
         df_details = sujet_choisi['questions']
         
-        # Fonction de mise en couleur
         def highlight_rows(row):
             for c in criteres:
                 theme_match = c['theme'].lower() in str(row['Thème']).lower()
