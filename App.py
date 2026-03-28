@@ -3,37 +3,34 @@ import pandas as pd
 
 st.set_page_config(page_title="Annales Lab", layout="wide")
 
-# --- STYLE CSS CORRIGÉ ---
+# --- STYLE CSS FINAL ---
 st.markdown("""
     <style>
-        /* La barre de progression (active) */
-        .stSlider [data-baseweb="slider"] div[role="presentation"] div {
+        /* 1. La barre entre les deux curseurs (le segment actif) */
+        .stSlider [data-baseweb="slider"] > div > div > div > div {
             background-color: #1f77b4 !important;
         }
-        /* La barre de fond (inactive) */
-        .stSlider [data-baseweb="slider"] div[role="presentation"] {
-            background-color: #e6e6e6 !important;
-            height: 6px !important;
-        }
-        /* Les poignées (cercles) */
-        .stSlider [data-baseweb="slider"] div[role="slider"] {
+
+        /* 2. Les cercles aux extrémités (les "Thumbs") */
+        .stSlider [data-baseweb="slider"] [role="slider"] {
             background-color: #1f77b4 !important;
-            border: 2px solid white !important;
-            box-shadow: 0px 2px 4px rgba(0,0,0,0.2) !important;
-            height: 18px !important;
-            width: 18px !important;
+            border: 2px solid #1f77b4 !important;
         }
-        /* La valeur au-dessus de la poignée */
+
+        /* 3. Le texte au-dessus des cercles */
         div[data-testid="stThumbValue"] {
             color: #1f77b4 !important;
             font-weight: bold !important;
         }
-        /* Supprimer les points/labels rouges automatiques de Streamlit si présents */
-        .stSlider [data-baseweb="slider"] div div div {
-             color: transparent !important;
+
+        /* 4. La barre de fond (segment inactif) */
+        .stSlider [data-baseweb="slider"] > div {
+            background-color: #e6e6e6 !important;
         }
-        .stSlider [data-baseweb="slider"] div div div:last-child {
-             color: #1f77b4 !important;
+
+        /* 5. Cacher les labels rouges répétitifs en bas si nécessaire */
+        .stSlider [data-baseweb="slider"] > div + div {
+            display: none !important;
         }
     </style>
     """, unsafe_allow_html=True)
