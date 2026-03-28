@@ -78,25 +78,41 @@ with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
     st.divider()
     st.markdown("⚠️ *La liste des thématiques correspond au contenu des **programmes de CPGE**. Des niveaux de difficulté sont indiqués par rapport à un élève de CPGE. Ces derniers sont purement indicatifs et propres à l'interprétation des concepteurs de ce site.*")
 
-# --- BARRE LATÉRALE ---
+# --- DANS LA BARRE LATÉRALE (FILTRES) ---
 with st.sidebar:
     st.header("⚙️ Paramètres")
     criteres = []
+    
+    # On définit l'ordre logique des niveaux pour le curseur
+    # On retire "Peu importe" car le curseur complet joue ce rôle
+    NIVEAUX_ORDRE = [n for n in DIFF_LISTE if n != "Peu importe"]
+    
     for n in range(st.session_state.nb_filtres):
         st.subheader(f"Filtre {n+1}")
         t = st.selectbox(f"Thème", THEMES_LISTE, key=f"t_{n}")
-        d = st.selectbox(f"Difficulté", DIFF_LISTE, key=f"d_{n}")
+        
+        # Remplacement du selectbox par un select_slider (curseur de plage)
+        # La valeur par défaut (value) sélectionne tout l'éventail
+        d_range = st.select_slider(
+            f"Plage de difficulté",
+            options=NIVEAUX_ORDRE,
+            value=(NIVEAUX_ORDRE[0], NIVEAUX_ORDRE[-1]),
+            key=f"d_{n}"
+        )
+        
         m = st.number_input(f"Quantité", min_value=1, value=1, key=f"m_{n}")
-        criteres.append({"theme": t, "diff": d, "min": m})
-    
+        criteres.append({"theme": t, "diff_range": d_range, "min": m})
+
     if st.button("➕ Ajouter un filtre"):
         st.session_state.nb_filtres += 1
         st.rerun()
     if st.button("🗑️ Supprimer le dernier filtre") and st.session_state.nb_filtres > 1:
         st.session_state.nb_filtres -= 1
         st.rerun()
+        
 
 # --- BOUTON DE RECHERCHE ---
+
 if st.button("🚀 Lancer la recherche", type="primary", use_container_width=True):
     data = charger_donnees(URL_CSV)
     trouves = []
@@ -106,16 +122,29 @@ if st.button("🚀 Lancer la recherche", type="primary", use_container_width=Tru
         valid = True
         stats = []
         for c in criteres:
-            mask = q['Thème'].astype(str).str.contains(c['theme'], case=False, na=False)
-            if c['diff'] != "Peu importe":
-                mask &= (q['Difficulté'].astype(str).str.strip() == c['diff'])
-            count = len(q[mask])
+            # 1. Filtre Thème
+            mask_theme = q['Thème'].astype(str).str.contains(c['theme'], case=False, na=False)
+            
+            # 2. Filtre Plage de Difficulté
+            # On récupère l'index des bornes choisies
+            idx_min = NIVEAUX_ORDRE.index(c['diff_range'][0])
+            idx_max = NIVEAUX_ORDRE.index(c['diff_range'][1])
+            niveaux_acceptes = NIVEAUX_ORDRE[idx_min : idx_max + 1]
+            
+            mask_diff = q['Difficulté'].astype(str).str.strip().isin(niveaux_acceptes)
+            
+            mask_final = mask_theme & mask_diff
+            count = len(q[mask_final])
+            
             stats.append(f"{c['theme']} : {count}")
             if count < c['min']:
                 valid = False
                 break
+        
         if valid:
             s['stats'] = " | ".join(stats)
+            # On stocke aussi la plage pour le surlignage plus bas
+            s['niveaux_acceptes'] = niveaux_acceptes 
             trouves.append(s)
     
     # --- AJOUT DU TRI PAR ANNÉE (DÉCROISSANT) ---
@@ -130,10 +159,10 @@ if st.session_state.resultats_recherche is not None:
     res = st.session_state.resultats_recherche
     if res:
         st.success(f"✅ {len(res)} sujet(s) trouvé(s)")
-        # L'auteur a été retiré ici
+        
         df_res = pd.DataFrame([{
-            "Sujet": r['nom'], 
             "Année": r['annee'], 
+            "Sujet": r['nom'], 
             "Détails": r['stats']
         } for r in res])
         st.table(df_res)
@@ -145,10 +174,18 @@ if st.session_state.resultats_recherche is not None:
         sujet_choisi = next(r for r in res if r['label'] == choix_label)
         df_details = sujet_choisi['questions']
         
+        # --- FONCTION DE MISE EN COULEUR CORRIGÉE ---
         def highlight_rows(row):
             for c in criteres:
+                # On définit les niveaux acceptés pour ce filtre
+                idx_min = NIVEAUX_ORDRE.index(c['diff_range'][0])
+                idx_max = NIVEAUX_ORDRE.index(c['diff_range'][1])
+                niveaux_acceptes = NIVEAUX_ORDRE[idx_min : idx_max + 1]
+                
+                # Vérification Thème ET Difficulté (dans la plage)
                 theme_match = c['theme'].lower() in str(row['Thème']).lower()
-                diff_match = (c['diff'] == "Peu importe") or (str(row['Difficulté']).strip() == c['diff'])
+                diff_match = str(row['Difficulté']).strip() in niveaux_acceptes
+                
                 if theme_match and diff_match:
                     return ['background-color: #d1e7ff; color: black'] * len(row)
             return [''] * len(row)
