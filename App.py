@@ -53,14 +53,14 @@ def charger_donnees(url):
         st.error(f"Erreur : {e}"); return []
 
 # --- BANDEAU DES CRÉDITS ---
-st.caption("**Qui sommes nous ? :**")
+st.caption("🛠️ **Conception et Développement :**")
 st.markdown("""
 <div style="font-size: 0.9rem; color: #555; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 20px;">
     <b>Sylvain Betoule</b> (Doctorant, Sorbonne Université) • 
     <b>Ulysse Garnier</b> (Doctorant, Sorbonne Université) • 
     <b>Morgane Leite</b> (Resp. Agrégation Chimie, ENS)
 </div>
-""", unsafe_allow_stdio=True, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 st.title("🧪 Recherche d'Annales de Chimie")
 
