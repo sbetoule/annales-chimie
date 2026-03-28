@@ -52,18 +52,30 @@ def charger_donnees(url):
     except Exception as e:
         st.error(f"Erreur : {e}"); return []
 
-# --- INTERFACE ---
-st.title("🧪 Recherche d'Annales")
+# --- BANDEAU DES CRÉDITS ---
+st.caption("**Qui sommes nous ? :**")
+st.markdown("""
+<div style="font-size: 0.9rem; color: #555; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 20px;">
+    <b>Sylvain Betoule</b> (Doctorant, Sorbonne Université) • 
+    <b>Ulysse Garnier</b> (Doctorant, Sorbonne Université) • 
+    <b>Morgane Leite</b> (Resp. Agrégation Chimie, ENS)
+</div>
+""", unsafe_allow_stdio=True, unsafe_allow_html=True)
 
-# 1) Instructions de départ
+st.title("🧪 Recherche d'Annales de Chimie")
+
+# --- INSTRUCTIONS DE DÉPART (Point 3 ajouté) ---
 with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown("**1. Configurez vos thèmes**")
-        st.info("⬅️ Cliquez sur la flèche en haut à gauche (sur mobile) pour ouvrir les filtres.")
-    with col2:
-        st.markdown("**2. Lancez la recherche**")
-        st.info("Cliquez sur le bouton rouge 🚀 en bas de cette page.")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.markdown("**1. Filtres**")
+        st.info("⬅️ Cliquez sur la flèche en haut à gauche (mobile) pour choisir vos thèmes.")
+    with c2:
+        st.markdown("**2. Recherche**")
+        st.info("Cliquez sur le bouton rouge **🚀 Lancer la recherche** en bas.")
+    with c3:
+        st.markdown("**3. Analyse**")
+        st.info("Sélectionnez un sujet en bas : les questions ciblées apparaîtront en couleur.")
 
 # --- BARRE LATÉRALE ---
 with st.sidebar:
@@ -102,7 +114,6 @@ if st.button("🚀 Lancer la recherche", type="primary", use_container_width=Tru
                 break
         if valid:
             s['stats'] = " | ".join(stats)
-            s['criteres_actifs'] = criteres # On garde les critères pour le highlight
             trouves.append(s)
     st.session_state.resultats_recherche = trouves
 
@@ -118,23 +129,22 @@ if st.session_state.resultats_recherche is not None:
         options_affichage = [r.get('label', r.get('nom')) for r in res]
         choix_label = st.selectbox("🔍 Afficher les détails du sujet :", options_affichage)
         
-        # Récupération et Highlight
         sujet_choisi = next(r for r in res if r['label'] == choix_label)
         df_details = sujet_choisi['questions']
         
+        # Fonction de mise en couleur
         def highlight_rows(row):
-            # On vérifie si la ligne actuelle correspond à un des filtres
             for c in criteres:
                 theme_match = c['theme'].lower() in str(row['Thème']).lower()
                 diff_match = (c['diff'] == "Peu importe") or (str(row['Difficulté']).strip() == c['diff'])
                 if theme_match and diff_match:
-                    return ['background-color: #d1e7ff; color: black'] * len(row) # Bleu clair
+                    return ['background-color: #d1e7ff; color: black'] * len(row)
             return [''] * len(row)
 
         st.subheader(f"Détails : {choix_label}")
-        st.markdown("*Les lignes surlignées en bleu correspondent à vos critères de recherche.*")
+        st.markdown("*Les lignes surlignées en bleu correspondent à vos critères.*")
         
         styled_df = df_details.style.apply(highlight_rows, axis=1)
         st.dataframe(styled_df, use_container_width=True, hide_index=True)
     else:
-        st.warning("⚠️ Aucun résultat ne correspond à tous vos critères simultanément.")
+        st.warning("⚠️ Aucun résultat ne correspond à tous vos critères.")
