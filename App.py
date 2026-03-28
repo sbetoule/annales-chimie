@@ -100,6 +100,7 @@ with st.sidebar:
 if st.button("🚀 Lancer la recherche", type="primary", use_container_width=True):
     data = charger_donnees(URL_CSV)
     trouves = []
+    
     for s in data:
         q = s['questions']
         valid = True
@@ -116,6 +117,12 @@ if st.button("🚀 Lancer la recherche", type="primary", use_container_width=Tru
         if valid:
             s['stats'] = " | ".join(stats)
             trouves.append(s)
+    
+    # --- AJOUT DU TRI PAR ANNÉE (DÉCROISSANT) ---
+    # On trie la liste 'trouves' en fonction de la clé 'annee'
+    # On utilise pd.to_numeric pour éviter les erreurs si une année est mal saisie
+    trouves.sort(key=lambda x: pd.to_numeric(x['annee'], errors='coerce'), reverse=True)
+    
     st.session_state.resultats_recherche = trouves
 
 # --- AFFICHAGE ---
