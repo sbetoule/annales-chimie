@@ -10,23 +10,18 @@ URL_NIVEAUX = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsADsmsMnYgQXIUl
 
 @st.cache_data(ttl=60)
 def recuperer_listes(url_themes, url_niveaux):
-    # Lecture des thèmes (Ligne 1)
-    df_t = pd.read_csv(url_themes, header=None)
-    # .iloc[0] récupère la première ligne, .tolist() en fait une liste
-    themes = df_t.iloc[0].dropna().astype(str).tolist()
-    
-    # Lecture des niveaux (Ligne 1)
-    df_n = pd.read_csv(url_niveaux, header=None)
-    # On récupère la ligne 1 et on ajoute "Peu importe" au début
-    niveaux_bruts = df_n.iloc[0].dropna().astype(str).tolist()
-    niveaux = ["Peu importe"] + niveaux_bruts
-    
-    return themes, niveaux
+    try:
+        df_t = pd.read_csv(url_themes, header=None)
+        themes = df_t.iloc[0].dropna().astype(str).tolist()
+        df_n = pd.read_csv(url_niveaux, header=None)
+        niveaux_bruts = df_n.iloc[0].dropna().astype(str).tolist()
+        niveaux = ["Peu importe"] + niveaux_bruts
+        return themes, niveaux
+    except:
+        return ["Erreur"], ["Peu importe"]
 
-# Chargement dynamique des listes
 THEMES_LISTE, DIFF_LISTE = recuperer_listes(URL_THEMES, URL_NIVEAUX)
 
-# --- INITIALISATION DE LA MÉMOIRE ---
 if 'resultats_recherche' not in st.session_state:
     st.session_state.resultats_recherche = None
 if 'nb_filtres' not in st.session_state:
@@ -39,37 +34,40 @@ def charger_donnees(url):
         sujets = []
         for i in range(1, df.shape[1], 4):
             nom_sujet = df.iloc[1, i]
-            if pd.isna(nom_sujet) or str(nom_sujet).strip() == "":
-                continue
-            
+            if pd.isna(nom_sujet) or str(nom_sujet).strip() == "": continue
             auteur = df.iloc[0, i]
             annee = df.iloc[2, i]
             questions = df.iloc[4:, i : i+4].copy()
-            
-            # Renommage explicite des colonnes selon votre demande
             questions.columns = ['Numéro', 'Thème', 'Difficulté', 'Remarque']
-            
             questions = questions.dropna(subset=['Thème'])
             questions = questions[questions['Thème'].astype(str).str.lower() != "thème"]
-            
             sujets.append({
                 "nom": str(nom_sujet).strip(),
                 "auteur": str(auteur).strip() if pd.notna(auteur) else "Inconnu",
                 "annee": str(annee).strip() if pd.notna(annee) else "N/A",
                 "questions": questions,
-                # Label combiné pour la liste déroulante
                 "label": f"{str(nom_sujet).strip()} ({str(annee).strip()})"
             })
         return sujets
     except Exception as e:
-        st.error(f"Erreur : {e}")
-        return []
+        st.error(f"Erreur : {e}"); return []
 
+# --- INTERFACE ---
 st.title("🧪 Recherche d'Annales")
 
-# --- BARRE LATÉRALE (FILTRES) ---
+# 1) Instructions de départ
+with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("**1. Configurez vos thèmes**")
+        st.info("⬅️ Cliquez sur la flèche en haut à gauche (sur mobile) pour ouvrir les filtres.")
+    with col2:
+        st.markdown("**2. Lancez la recherche**")
+        st.info("Cliquez sur le bouton rouge 🚀 en bas de cette page.")
+
+# --- BARRE LATÉRALE ---
 with st.sidebar:
-    st.header("Paramètres")
+    st.header("⚙️ Paramètres")
     criteres = []
     for n in range(st.session_state.nb_filtres):
         st.subheader(f"Filtre {n+1}")
@@ -86,7 +84,7 @@ with st.sidebar:
         st.rerun()
 
 # --- BOUTON DE RECHERCHE ---
-if st.button("🚀 Lancer la recherche", type="primary"):
+if st.button("🚀 Lancer la recherche", type="primary", use_container_width=True):
     data = charger_donnees(URL_CSV)
     trouves = []
     for s in data:
@@ -104,39 +102,39 @@ if st.button("🚀 Lancer la recherche", type="primary"):
                 break
         if valid:
             s['stats'] = " | ".join(stats)
+            s['criteres_actifs'] = criteres # On garde les critères pour le highlight
             trouves.append(s)
-    
     st.session_state.resultats_recherche = trouves
 
-# --- AFFICHAGE (SI RÉSULTATS EN MÉMOIRE) ---
+# --- AFFICHAGE ---
 if st.session_state.resultats_recherche is not None:
     res = st.session_state.resultats_recherche
-    
     if res:
-        st.success(f"{len(res)} sujet(s) trouvé(s)")
-        
-        # Tableau résumé
-        df_res = pd.DataFrame([{
-            "Sujet": r.get('nom', 'Inconnu'),
-            "Année": r.get('annee', 'N/A'),
-            "Auteur": r.get('auteur', 'Inconnu'),
-            "Détails": r.get('stats', '')
-        } for r in res])
+        st.success(f"✅ {len(res)} sujet(s) trouvé(s)")
+        df_res = pd.DataFrame([{"Sujet": r['nom'], "Année": r['annee'], "Auteur": r['auteur'], "Détails": r['stats']} for r in res])
         st.table(df_res)
         
         st.divider()
+        options_affichage = [r.get('label', r.get('nom')) for r in res]
+        choix_label = st.selectbox("🔍 Afficher les détails du sujet :", options_affichage)
         
-        # SÉCURITÉ : On vérifie si 'label' existe, sinon on utilise 'nom'
-        options_affichage = [r.get('label', r.get('nom', 'Sujet sans nom')) for r in res]
+        # Récupération et Highlight
+        sujet_choisi = next(r for r in res if r['label'] == choix_label)
+        df_details = sujet_choisi['questions']
         
-        choix_label = st.selectbox("Afficher les détails du sujet :", options_affichage)
+        def highlight_rows(row):
+            # On vérifie si la ligne actuelle correspond à un des filtres
+            for c in criteres:
+                theme_match = c['theme'].lower() in str(row['Thème']).lower()
+                diff_match = (c['diff'] == "Peu importe") or (str(row['Difficulté']).strip() == c['diff'])
+                if theme_match and diff_match:
+                    return ['background-color: #d1e7ff; color: black'] * len(row) # Bleu clair
+            return [''] * len(row)
+
+        st.subheader(f"Détails : {choix_label}")
+        st.markdown("*Les lignes surlignées en bleu correspondent à vos critères de recherche.*")
         
-        # Récupération du sujet (recherche par label ou par nom)
-        try:
-            data_sujet = next(r['questions'] for r in res if r.get('label') == choix_label or r.get('nom') == choix_label)
-            st.subheader(f"Contenu : {choix_label}")
-            st.dataframe(data_sujet, use_container_width=True, hide_index=True)
-        except StopIteration:
-            st.warning("Sélectionnez un sujet pour voir les détails.")
+        styled_df = df_details.style.apply(highlight_rows, axis=1)
+        st.dataframe(styled_df, use_container_width=True, hide_index=True)
     else:
-        st.warning("Aucun résultat trouvé.")
+        st.warning("⚠️ Aucun résultat ne correspond à tous vos critères simultanément.")
