@@ -3,20 +3,37 @@ import pandas as pd
 
 st.set_page_config(page_title="Annales Lab", layout="wide")
 
-# --- STYLE CSS PERSONNALISÉ (Couleur du curseur et mise en page) ---
+# --- STYLE CSS CORRIGÉ ---
 st.markdown("""
     <style>
-        /* Change la couleur rouge par défaut du slider en bleu professionnel */
-        .stSlider [data-baseweb="slider"] div {
+        /* La barre de progression (active) */
+        .stSlider [data-baseweb="slider"] div[role="presentation"] div {
             background-color: #1f77b4 !important;
         }
-        /* Change la couleur du texte des valeurs du slider */
+        /* La barre de fond (inactive) */
+        .stSlider [data-baseweb="slider"] div[role="presentation"] {
+            background-color: #e6e6e6 !important;
+            height: 6px !important;
+        }
+        /* Les poignées (cercles) */
+        .stSlider [data-baseweb="slider"] div[role="slider"] {
+            background-color: #1f77b4 !important;
+            border: 2px solid white !important;
+            box-shadow: 0px 2px 4px rgba(0,0,0,0.2) !important;
+            height: 18px !important;
+            width: 18px !important;
+        }
+        /* La valeur au-dessus de la poignée */
         div[data-testid="stThumbValue"] {
             color: #1f77b4 !important;
+            font-weight: bold !important;
         }
-        /* Ajustement pour les colonnes sur mobile */
-        [data-testid="column"] {
-            min-width: 250px;
+        /* Supprimer les points/labels rouges automatiques de Streamlit si présents */
+        .stSlider [data-baseweb="slider"] div div div {
+             color: transparent !important;
+        }
+        .stSlider [data-baseweb="slider"] div div div:last-child {
+             color: #1f77b4 !important;
         }
     </style>
     """, unsafe_allow_html=True)
