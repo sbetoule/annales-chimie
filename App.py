@@ -64,7 +64,7 @@ st.markdown("""
 
 st.title("🧪 Recherche d'Annales de Chimie")
 
-# --- INSTRUCTIONS DE DÉPART (Point 3 ajouté) ---
+# --- INSTRUCTIONS DE DÉPART ---
 with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
     c1, c2, c3 = st.columns(3)
     with c1:
@@ -76,7 +76,10 @@ with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
     with c3:
         st.markdown("**3. Analyse**")
         st.info("Sélectionnez un sujet en bas de la page : les questions ciblées apparaîtront en couleur.")
-
+    
+    st.divider() # Petite ligne de séparation
+    st.markdown("⚠️ *Note pédagogique : La liste des thématiques correspond au **programme de CPGE**. Les niveaux de difficulté sont également calibrés par rapport aux attentes des classes préparatoires.*")
+    
 # --- BARRE LATÉRALE ---
 with st.sidebar:
     st.header("⚙️ Paramètres")
