@@ -53,12 +53,12 @@ def charger_donnees(url):
         st.error(f"Erreur : {e}"); return []
 
 # --- BANDEAU DES CRÉDITS ---
-st.caption("🛠️ **Conception et Développement :**")
+st.caption("**Qui sommes nous ?*")
 st.markdown("""
 <div style="font-size: 0.9rem; color: #555; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 20px;">
     <b>Sylvain Betoule</b> (Doctorant, Sorbonne Université) • 
     <b>Ulysse Garnier</b> (Doctorant, Sorbonne Université) • 
-    <b>Morgane Leite</b> (Resp. Agrégation Chimie, ENS)
+    <b>Morgane Leite</b> (Responsable de la préparation à l'agrégation de chimie, ENS)
 </div>
 """, unsafe_allow_html=True)
 
@@ -75,7 +75,7 @@ with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
         st.info("Cliquez sur le bouton rouge **🚀 Lancer la recherche** en bas.")
     with c3:
         st.markdown("**3. Analyse**")
-        st.info("Sélectionnez un sujet en bas : les questions ciblées apparaîtront en couleur.")
+        st.info("Sélectionnez un sujet en bas de la page : les questions ciblées apparaîtront en couleur.")
 
 # --- BARRE LATÉRALE ---
 with st.sidebar:
