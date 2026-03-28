@@ -53,7 +53,7 @@ def charger_donnees(url):
         st.error(f"Erreur : {e}"); return []
 
 # --- BANDEAU DES CRÉDITS ---
-st.caption("**Qui sommes nous ?*")
+st.caption("*Qui sommes nous ?*")
 st.markdown("""
 <div style="font-size: 0.9rem; color: #555; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 20px;">
     <b>Sylvain Betoule</b> (Doctorant, Sorbonne Université) • 
