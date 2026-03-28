@@ -78,7 +78,7 @@ with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
         st.info("Sélectionnez un sujet en bas de la page : les questions ciblées apparaîtront en couleur.")
     
     st.divider() # Petite ligne de séparation
-    st.markdown("⚠️ *Note pédagogique : La liste des thématiques correspond au **programme de CPGE**. Les niveaux de difficulté sont également calibrés par rapport aux attentes des classes préparatoires.*")
+    st.markdown("⚠️ *La liste des thématiques correspond au contenu des **programmes de CPGE**. Des niveaux de difficulté sont indiqués par rapport à un élève de CPGE. Ces derniers sont purement indicatifs et propres à l'interprétation des concepteurs de ce site.*")
     
 # --- BARRE LATÉRALE ---
 with st.sidebar:
