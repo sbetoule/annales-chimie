@@ -28,10 +28,12 @@ st.markdown("""
             text-transform: uppercase;
             font-size: 0.75rem;
         }
+
+        /* --- Container du Logo (Padding réduit en bas) --- */
         .logo-graphic-container {
             text-align: center;
             margin-bottom: 45px;
-            padding: 25px 40px;
+            padding: 25px 40px 15px 40px; /* Réduit de 25px à 15px en bas */
             background: linear-gradient(165deg, rgba(255, 154, 68, 0.05) 0%, rgba(252, 96, 118, 0.08) 100%);
             border-radius: 50px 15px 70px 20px;
             display: inline-block;
@@ -40,6 +42,7 @@ st.markdown("""
             transform: translateX(-50%);
             box-shadow: 0 10px 30px rgba(0,0,0,0.02);
         }
+
         .logo-text-base {
             font-family: 'Poppins', sans-serif !important;
             font-weight: 900 !important;
@@ -49,7 +52,9 @@ st.markdown("""
             margin: 0;
             display: inline-block;
         }
+
         .logo-annales { font-size: 4rem !important; color: #2c3e50; position: relative; z-index: 1; }
+        
         .logo-lab-badged {
             font-family: 'Permanent Marker', cursive !important;
             font-size: 1.7rem !important;
@@ -63,6 +68,7 @@ st.markdown("""
             z-index: 2;
             box-shadow: 0 4px 12px rgba(252, 96, 118, 0.35);
         }
+
         .logo-chimie {
             font-size: 3.5rem !important;
             background: linear-gradient(135deg, #1f77b4 0%, #3498db 100%);
@@ -73,15 +79,26 @@ st.markdown("""
             margin-top: -5px;
             display: block;
         }
+
+        /* --- Sous-titre (Espace réduit avec le haut) --- */
         .logo-sub-dynamic {
             font-family: 'Roboto', sans-serif !important;
             font-size: 0.9rem !important;
             color: #95a5a6;
             text-transform: uppercase;
             letter-spacing: 5px;
-            margin-top: 18px;
+            margin-top: 8px; /* Réduit de 18px à 8px */
             font-weight: 400;
         }
+
+        /* Style pour coller l'avertissement CPGE aux colonnes */
+        .cpge-warning {
+            font-size: 0.85rem; 
+            color: #666; 
+            font-style: italic; 
+            margin-top: -10px; /* Remonte le texte */
+        }
+
         .stSlider [data-baseweb="slider"] div[role="presentation"] div { background-color: #fc6076 !important; }
         .stSlider [data-baseweb="slider"] div[role="slider"] { background-color: #fc6076 !important; border: 2px solid white !important; }
         div[data-testid="stThumbValue"] { color: #fc6076 !important; }
@@ -159,17 +176,16 @@ with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
         st.markdown("**3. Analyse**")
         st.info("Les questions ciblées apparaîtront en bleu dans les détails.")
     
-    # Espace réduit ici
-    st.markdown("<br><p style='font-size: 0.85rem; color: #666; font-style: italic;'>⚠️ La liste des thématiques correspond au contenu des programmes de CPGE. Des niveaux de difficulté sont indiqués par rapport à un élève de CPGE. Ces derniers sont purement indicatifs et propres à l'interprétation des concepteurs de ce site.</p>", unsafe_allow_html=True)
+    # Texte d'avertissement avec classe CSS dédiée pour l'espacement
+    st.markdown("<p class='cpge-warning'>⚠️ La liste des thématiques correspond au contenu des programmes de CPGE. Des niveaux de difficulté sont indiqués par rapport à un élève de CPGE. Ces derniers sont purement indicatifs et propres à l'interprétation des concepteurs de ce site.</p>", unsafe_allow_html=True)
 
-# Barre latérale
+# Barre latérale (conservée à l'identique)
 with st.sidebar:
     st.header("⚙️ Filtres")
     criteres = []
     niveaux_lower = [n.lower().strip() for n in NIVEAUX_ORDRE]
     try:
-        s_idx = niveaux_lower.index("facile")
-        e_idx = niveaux_lower.index("difficile")
+        s_idx, e_idx = niveaux_lower.index("facile"), niveaux_lower.index("difficile")
     except ValueError:
         s_idx, e_idx = 0, len(NIVEAUX_ORDRE) - 1
 
@@ -184,7 +200,7 @@ with st.sidebar:
     if col1.button("➕ Ajouter"): st.session_state.nb_filtres += 1; st.rerun()
     if col2.button("🗑️ Effacer") and st.session_state.nb_filtres > 1: st.session_state.nb_filtres -= 1; st.rerun()
 
-# Logique de recherche
+# Logique de recherche et résultats (Inversion colonnes et masquage index)
 if st.button("🚀 Lancer la recherche d'annales", type="primary", use_container_width=True):
     data = charger_donnees(URL_CSV)
     trouves = []
@@ -203,14 +219,10 @@ if st.button("🚀 Lancer la recherche d'annales", type="primary", use_container
             trouves.append(s)
     st.session_state.resultats_recherche = sorted(trouves, key=lambda x: x['annee'], reverse=True)
 
-# Résultats
 if st.session_state.resultats_recherche:
     st.success(f"✅ {len(st.session_state.resultats_recherche)} sujets trouvés")
-    
-    # Inversion des colonnes Sujet et Année + Masquage de l'index
     df_res = pd.DataFrame([{"Sujet": r['nom'], "Année": r['annee'], "Questions ciblées": r['stats']} for r in st.session_state.resultats_recherche])
     st.dataframe(df_res, use_container_width=True, hide_index=True)
-    
     st.divider()
     choix = st.selectbox("🔍 Détails du sujet :", [r['label'] for r in st.session_state.resultats_recherche])
     sujet = next(r for r in st.session_state.resultats_recherche if r['label'] == choix)
