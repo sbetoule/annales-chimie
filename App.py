@@ -12,9 +12,9 @@ st.markdown("""
     
     <style>
         .block-container {
-            padding-top: 1rem !important;
+            /* On laisse 3rem pour que la ligne "Qui sommes-nous" respire */
+            padding-top: 3rem !important; 
             padding-bottom: 0rem !important;
-            margin-top: -10px; /* Optionnel : pour remonter encore plus */
         }
     
         .credits-compact {
