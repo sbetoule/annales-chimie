@@ -3,8 +3,7 @@ import pandas as pd
 
 st.set_page_config(page_title="Annales Lab Chimie", layout="wide")
 
-# --- STYLE CSS (LOGO DYNAMIQUE & GRAPHIQUE + Curseur + Tableaux) ---
-# Import de polices Google : Poppins (Grassa/Géométrique) et Permanent Marker (Dynamique/Tag)
+# --- STYLE CSS (LOGO DYNAMIQUE CORAIL + Curseur + Tableaux) ---
 st.markdown("""
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,18 +15,16 @@ st.markdown("""
             text-align: center;
             margin-top: 20px;
             margin-bottom: 40px;
-            padding: 25px 10px;
-            /* Fond blob/goutte asymétrique et très arrondi */
-            background: linear-gradient(165deg, rgba(31, 119, 180, 0.1) 0%, rgba(106, 176, 222, 0.2) 100%);
-            border-radius: 60px 20px 80px 30px; /* Bords asymétriques */
-            display: inline-block; /* Pour que le fond s'adapte au texte */
-            position: relative; /* Pour le positionnement absolu de Lab */
+            padding: 25px 30px;
+            background: linear-gradient(165deg, rgba(255, 154, 68, 0.05) 0%, rgba(252, 96, 118, 0.1) 100%);
+            border-radius: 60px 20px 80px 30px;
+            display: inline-block;
+            position: relative;
             left: 50%;
-            transform: translateX(-50%); /* Centrage horizontal du container */
-            box-shadow: 0 10px 20px rgba(0,0,0,0.05); /* Ombre douce */
+            transform: translateX(-50%);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.03);
         }
 
-        /* Style de base pour le texte principal (Annales ... Chimie) */
         .logo-text-base {
             font-family: 'Poppins', sans-serif !important;
             font-weight: 900 !important;
@@ -38,88 +35,71 @@ st.markdown("""
             display: inline-block;
         }
 
-        /* "Annales" : dégradé vibrant cyan/bleu */
+        /* "Annales" : Dégradé sombre élégant */
         .logo-annales {
             font-size: 4rem !important;
-            background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%);
+            color: #2c3e50;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* "Lab" : Dynamique, Corail Solaire & Blanc Glacé */
+        .logo-lab-badged {
+            font-family: 'Permanent Marker', cursive !important;
+            font-size: 2.8rem !important;
+            color: #ffffff; 
+            background: linear-gradient(135deg, #ff9a44 0%, #fc6076 100%); 
+            padding: 5px 25px;
+            border-radius: 50px;
+            position: absolute;
+            top: 20px;
+            right: -30px;
+            transform: rotate(-12deg);
+            z-index: 2;
+            box-shadow: 0 4px 15px rgba(252, 96, 118, 0.4);
+        }
+
+        /* "Chimie" : Bleu profond pour le rappel scientifique */
+        .logo-chimie {
+            font-size: 3.5rem !important;
+            background: linear-gradient(135deg, #1f77b4 0%, #3498db 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
             text-fill-color: transparent;
-            position: relative; /* Pour la superposition de Lab */
-            z-index: 1; /* Derrière Lab */
+            margin-top: -10px;
+            display: block;
         }
 
-       /* "Lab" : Dynamique, de biais, superposé, Corail Solaire & Blanc Glacé */
-.logo-lab-badged {
-    font-family: 'Permanent Marker', cursive !important; /* Police Tag/Manuscrite */
-    font-size: 2.8rem !important;
-    
-    /* COULEUR DU TEXTE : Blanc très pur */
-    color: #ffffff; 
-
-    /* FOND DU BADGE : Dégradé Corail Solaire (Orange-Rose) */
-    background: linear-gradient(135deg, #ff9a44 0%, #fc6076 100%); 
-    
-    padding: 5px 20px;
-    border-radius: 50px; /* Très arrondi */
-    position: absolute;
-    top: 25px; /* Position verticale */
-    right: -20px; /* Position horizontale, dépasse légèrement */
-    transform: rotate(-15deg); /* Rotation de biais */
-    z-index: 2; /* Devant Annales */
-    box-shadow: 0 4px 15px rgba(252, 96, 118, 0.3); /* Ombre corail douce */
-    letter-spacing: 0; /* Pas d'espacement pour cette police */
-}
-
-        /* "Chimie" : Noir mat/Gris très foncé, aligné dessous */
-        .logo-chimie {
-            font-size: 3.5rem !important;
-            color: #2c3e50; /* Noir mat/Gris très foncé */
-            margin-top: -10px; /* Rapproche de Annales */
-            display: block; /* Va à la ligne */
-        }
-
-        /* Sous-titre : simple et propre */
         .logo-sub-dynamic {
             font-family: 'Roboto', sans-serif !important;
-            font-size: 1.1rem !important;
+            font-size: 1rem !important;
             color: #7f8c8d;
             text-transform: uppercase;
-            letter-spacing: 5px;
+            letter-spacing: 6px;
             margin-top: 15px;
             font-weight: 400;
         }
 
-        /* --- STYLES STREAMLIT EXISTANTS (Curseur, Tableaux, etc.) --- */
-        .stSlider [data-baseweb="slider"] div[role="presentation"] div {
-            background-color: #3a7bd5 !important; /* Bleu vibrant du logo */
+        /* --- STYLES STREAMLIT (Curseur & Boutons harmonisés) --- */
+        .stButton > button {
+            border-radius: 12px !important;
         }
-        .stSlider [data-baseweb="slider"] div[role="presentation"] {
-            background-color: #e6e6e6 !important;
-            height: 6px !important;
+        
+        .stSlider [data-baseweb="slider"] div[role="presentation"] div {
+            background-color: #fc6076 !important; 
         }
         .stSlider [data-baseweb="slider"] div[role="slider"] {
-            background-color: #3a7bd5 !important;
+            background-color: #fc6076 !important;
             border: 2px solid white !important;
-            box-shadow: 0px 2px 4px rgba(0,0,0,0.2) !important;
-            height: 18px !important;
-            width: 18px !important;
         }
         div[data-testid="stThumbValue"] {
-            color: #3a7bd5 !important;
-            font-weight: bold !important;
-        }
-        .stSlider [data-baseweb="slider"] div div div {
-             color: transparent !important;
-        }
-        .stSlider [data-baseweb="slider"] div div div:last-child {
-             color: #3a7bd5 !important;
+            color: #fc6076 !important;
         }
     </style>
     """, unsafe_allow_html=True)
 
-# --- URLS DES FLUX (Inchangés) ---
+# --- URLS DES FLUX ---
 URL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsADsmsMnYgQXIUlU25_FlKrtTffM5XOL69taw9Pco8AHV4suIUtT0tg384XBtBAo28qGKGbtSJtIy/pub?gid=0&single=true&output=csv"
 URL_THEMES = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsADsmsMnYgQXIUlU25_FlKrtTffM5XOL69taw9Pco8AHV4suIUtT0tg384XBtBAo28qGKGbtSJtIy/pub?gid=1733310474&single=true&output=csv"
 URL_NIVEAUX = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsADsmsMnYgQXIUlU25_FlKrtTffM5XOL69taw9Pco8AHV4suIUtT0tg384XBtBAo28qGKGbtSJtIy/pub?gid=1879771001&single=true&output=csv"
@@ -165,7 +145,7 @@ def charger_donnees(url):
     except Exception as e:
         st.error(f"Erreur : {e}"); return []
 
-# --- BANDEAU DES CRÉDITS (Inchangé) ---
+# --- BANDEAU DES CRÉDITS ---
 st.caption("*Qui sommes nous ?*")
 st.markdown("""
 <div style="font-size: 0.9rem; color: #555; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 25px;">
@@ -175,7 +155,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# --- LOGO GRAPHIQUE DYNAMIQUE ET DÉSTRUCTURÉ ---
+# --- LOGO GRAPHIQUE DYNAMIQUE ---
 st.markdown("""
     <div class="logo-graphic-container">
         <span class="logo-text-base logo-annales">Annales</span>
@@ -185,23 +165,23 @@ st.markdown("""
     </div>
     """, unsafe_allow_html=True)
 
-# --- INSTRUCTIONS DE DÉPART (Inchangé) ---
+# --- INSTRUCTIONS DE DÉPART ---
 with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
     c1, c2, c3 = st.columns(3)
     with c1:
         st.markdown("**1. Filtres**")
-        st.info("⬅️ Cliquez sur la flèche en haut à gauche pour choisir vos thèmes.")
+        st.info("⬅️ Utilisez la barre latérale pour choisir vos thèmes.")
     with c2:
         st.markdown("**2. Recherche**")
-        st.info("Cliquez sur le bouton bleu **🚀 Lancer la recherche** en bas.")
+        st.info("Cliquez sur le bouton **🚀 Lancer la recherche**.")
     with c3:
         st.markdown("**3. Analyse**")
-        st.info("Sélectionnez un sujet en bas de la page : les questions ciblées apparaîtront en couleur.")
+        st.info("Les questions ciblées apparaîtront en bleu dans les détails.")
     
     st.divider()
-    st.markdown("⚠️ *La liste des thématiques correspond au contenu des **programmes de CPGE**. Des niveaux de difficulté sont indiqués par rapport à un élève de CPGE. Ces derniers sont purement indicatifs et propres à l'interprétation des concepteurs de ce site.*")
+    st.markdown("⚠️ *La liste des thématiques correspond au contenu des **programmes de CPGE**.*")
 
-# --- BARRE LATÉRALE (Inchangé) ---
+# --- BARRE LATÉRALE (FILTRES) ---
 with st.sidebar:
     st.header("⚙️ Paramètres")
     criteres = []
@@ -211,7 +191,6 @@ with st.sidebar:
         t = st.selectbox(f"Thème", THEMES_LISTE, key=f"t_{n}")
         
         niveaux_lower = [str(x).lower() for x in NIVEAUX_ORDRE]
-        
         try:
             idx_start = niveaux_lower.index("facile")
             start_val = NIVEAUX_ORDRE[idx_start]
@@ -241,7 +220,7 @@ with st.sidebar:
         st.session_state.nb_filtres -= 1
         st.rerun()
 
-# --- BOUTON DE RECHERCHE (Inchangé) ---
+# --- BOUTON DE RECHERCHE ---
 if st.button("🚀 Lancer la recherche", type="primary", use_container_width=True):
     data = charger_donnees(URL_CSV)
     trouves = []
@@ -271,7 +250,7 @@ if st.button("🚀 Lancer la recherche", type="primary", use_container_width=Tru
     trouves.sort(key=lambda x: pd.to_numeric(x['annee'], errors='coerce'), reverse=True)
     st.session_state.resultats_recherche = trouves
 
-# --- AFFICHAGE DES RÉSULTATS (Inchangé) ---
+# --- AFFICHAGE DES RÉSULTATS ---
 if st.session_state.resultats_recherche is not None:
     res = st.session_state.resultats_recherche
     if res:
@@ -305,8 +284,6 @@ if st.session_state.resultats_recherche is not None:
             return [''] * len(row)
 
         st.subheader(f"Détails : {choix_label}")
-        st.markdown("*Les lignes surlignées en bleu correspondent à vos critères de recherche.*")
-        
         styled_df = df_details.style.apply(highlight_rows, axis=1)
         st.dataframe(styled_df, use_container_width=True, hide_index=True)
     else:
