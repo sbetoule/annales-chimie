@@ -15,24 +15,25 @@ st.markdown("""
         header[data-testid="stHeader"] {
             display: none !important;
         }
-        /* Style global du titre de l'expander */
-        .stExpander summary p {
-            font-size: 0.95rem !important;
-            color: #888 !important; /* Couleur grise pour les stats */
-            font-weight: 400 !important; /* Non-gras par défaut */
-            line-height: 1.2 !important;
+       /* On réduit la taille du titre natif de l'expander pour qu'il soit discret */
+        .stExpander summary {
+            margin-bottom: -15px !important;
         }
         
-        /* Force la première partie du texte en Noir et Gras */
-        .stExpander summary p::first-line {
-            color: #2c3e50 !important;
-            font-weight: 700 !important;
+        /* Style pour notre nouveau titre injecté */
+        .custom-title-container {
+            margin-top: -10px;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
         }
-
-        /* Optionnel : Enlever la bordure rouge de l'expander quand on clique dessus */
-        .stExpander:focus {
-            outline: none !important;
-            box-shadow: none !important;
+        .title-bold {
+            color: #2c3e50;
+            font-weight: 700;
+        }
+        .title-stats {
+            color: #888;
+            font-weight: 400;
+            margin-left: 5px;
         }
         /* Ajustement de la marge pour que le texte "Qui sommes-nous" 
            ne soit pas trop collé au bord maintenant que le header est parti */
@@ -243,12 +244,18 @@ if st.session_state.resultats_recherche:
     st.success(f"✅ {nb} {label_sujet}")
 
     for idx, r in enumerate(st.session_state.resultats_recherche):
-        # L'astuce : on met un \n entre le nom et les stats. 
-        # Le CSS appliquera le gras uniquement sur ce qui précède le \n.
-        titre_header = f"📄 {r['nom']} ({r['annee']}) \n •  {r['stats']}"
-        
-        with st.expander(titre_header):
-            # Logique du lien et du tableau (inchangée)
+        # On laisse un titre court pour l'expander fermé
+        with st.expander(f"📄 {r['nom']} ({r['annee']})"):
+            
+            # On injecte le titre stylisé en haut du contenu de l'expander
+            st.markdown(f"""
+                <div class="custom-title-container">
+                    <span class="title-bold">📄 {r['nom']} ({r['annee']})</span>
+                    <span class="title-stats">• {r['stats']}</span>
+                </div>
+                """, unsafe_allow_html=True)
+
+            # --- LOGIQUE DU LIEN ---
             nom_comparaison = r['nom'].lower()
             lien_sujet = None
             if "présélection icho" in nom_comparaison:
