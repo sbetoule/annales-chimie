@@ -4,18 +4,43 @@ import pandas as pd
 # Configuration de la page
 st.set_page_config(page_title="Annales Lab Chimie", layout="wide")
 
-# --- STYLE CSS (LOGO, CRÉDITS, ANIMATION MOBILE) ---
+# --- STYLE CSS (LOGO, CRÉDITS, ANIMATION MOBILE & FORCE LIGHT MODE) ---
 st.markdown("""
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@800;900&family=Permanent+Marker&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
+        /* FORCE LIGHT MODE (Anti-mode sombre) */
+        :root {
+            --primary-color: #fc6076;
+            --background-color: #ffffff;
+            --secondary-background-color: #f0f2f6;
+            --text-color: #262730;
+        }
+
+        .stApp {
+            background-color: white !important;
+            color: #262730 !important;
+        }
+
+        [data-testid="stHeader"], [data-testid="stSidebar"] {
+            background-color: #f0f2f6 !important;
+        }
+
+        /* Texte forcé en sombre pour la lisibilité */
+        h1, h2, h3, p, span, div, label, .stMarkdown {
+            color: #262730 !important;
+        }
+
+        /* Crédits */
         .credits-compact {
             font-size: 0.85rem; color: #555; text-align: center;
             border-bottom: 1px solid #eee; padding-bottom: 10px;
             margin-bottom: 30px; font-family: 'Roboto', sans-serif; line-height: 1.5;
         }
+
+        /* Container du Logo */
         .logo-graphic-container {
             text-align: center; margin-bottom: 45px; padding: 25px 40px 15px 40px; 
             background: linear-gradient(165deg, rgba(255, 154, 68, 0.05) 0%, rgba(252, 96, 118, 0.08) 100%);
@@ -23,21 +48,26 @@ st.markdown("""
             position: relative; left: 50%; transform: translateX(-50%);
             box-shadow: 0 10px 30px rgba(0,0,0,0.02);
         }
+
         .logo-text-base { font-family: 'Poppins', sans-serif !important; font-weight: 900 !important; text-transform: uppercase; letter-spacing: -2px; line-height: 0.85; margin: 0; display: inline-block; }
         .logo-annales { font-size: 4rem !important; color: #2c3e50; position: relative; z-index: 1; }
+        
         .logo-lab-badged {
             font-family: 'Permanent Marker', cursive !important; font-size: 1.7rem !important;
             color: #ffffff; background: linear-gradient(135deg, #ff9a44 0%, #fc6076 100%); 
             padding: 2px 14px; border-radius: 40px; position: absolute;
             top: 48px; right: 25px; transform: rotate(-10deg); z-index: 2;
         }
+
         .logo-chimie {
             font-size: 3.5rem !important; background: linear-gradient(135deg, #1f77b4 0%, #3498db 100%);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             background-clip: text; text-fill-color: transparent; margin-top: -5px; display: block;
         }
+
         .logo-sub-dynamic { font-family: 'Roboto', sans-serif !important; font-size: 0.9rem !important; color: #95a5a6; text-transform: uppercase; letter-spacing: 5px; margin-top: 8px; font-weight: 400; }
         
+        /* Animation mobile bouton sidebar */
         [data-testid="stSidebarCollapseIcon"] {
             background-color: #fc6076 !important; color: white !important; border-radius: 50% !important; padding: 5px !important; animation: pulse-red 2s infinite;
         }
@@ -46,7 +76,10 @@ st.markdown("""
             70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(252, 96, 118, 0); }
             100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(252, 96, 118, 0); }
         }
+
         .cpge-warning { font-size: 0.85rem; color: #666; font-style: italic; margin-top: -10px; }
+        
+        /* Personnalisation des Sliders */
         .stSlider [data-baseweb="slider"] div[role="presentation"] div { background-color: #fc6076 !important; }
         .stSlider [data-baseweb="slider"] div[role="slider"] { background-color: #fc6076 !important; border: 2px solid white !important; }
         div[data-testid="stThumbValue"] { color: #fc6076 !important; }
@@ -170,11 +203,10 @@ if st.session_state.resultats_recherche:
         lien_sujet = "https://agregation-chimie.fr/index.php/composition-de-physique-chimie/annales-des-epreuves-ecrites"
     elif "agrégation externe" in nom_comparaison:
         lien_sujet = "https://agregation-chimie.fr/index.php/les-epreuves-ecrites/annales-des-epreuves-ecrites"
-    elif "CAPES" in nom_comparaison:
-        lien_sujet = "http://b.louchart.free.fr/Concours_et_examens/CAPES/CAPES_externe_Physique_Chimie/Sujets_et_corriges_ecrits.htmls"
+    elif "capes" in nom_comparaison:
+        lien_sujet = "http://b.louchart.free.fr/Concours_et_examens/CAPES/CAPES_externe_Physique_Chimie/Sujets_et_corriges_ecrits.html"
     
     if lien_sujet:
-        # Bouton sobre (secondary) et largeur réduite (pas de use_container_width)
         st.link_button("📄 Lien vers le sujet", lien_sujet, type="secondary")
     
     def highlight_rows(row):
