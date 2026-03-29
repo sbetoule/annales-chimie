@@ -206,9 +206,17 @@ if st.session_state.resultats_recherche:
     st.success(f"✅ {nb} {'sujet trouvé' if nb == 1 else 'sujets trouvés'}")
 
     for idx, r in enumerate(st.session_state.resultats_recherche):
-        titre_html = f"{r['nom']} ({r['annee']}) <span class='sujet-themes'> • {r['stats']}</span>"
+        # 1. On crée le titre PROPRE (sans HTML) pour l'expander
+        titre_propre = f"{r['nom']} ({r['annee']}) • {r['stats']}"
         
-        with st.expander(titre_html):
+        with st.expander(titre_propre):
+            # 2. SI VOUS VOULEZ LE RAPPEL DESIGN À L'INTÉRIEUR :
+            st.markdown(f"""
+                <div style="margin-bottom: 15px;">
+                    <span style="color: #2c3e50; font-weight: 700; font-size: 1.1rem;">{r['nom']} ({r['annee']})</span>
+                    <span style="color: #888; margin-left: 10px;">• {r['stats']}</span>
+                </div>
+            """, unsafe_allow_html=True)
             nom_comp = r['nom'].lower()
             lien = None
             if "présélection icho" in nom_comp: lien = "https://www.sciencesalecole.org/olympiades-internationales-de-chimie-ressources/"
