@@ -11,7 +11,6 @@ st.markdown("""
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@800;900&family=Permanent+Marker&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
-        /* --- Bandeau des crédits détaillé et compact --- */
         .credits-compact {
             font-size: 0.85rem;
             color: #555;
@@ -29,8 +28,6 @@ st.markdown("""
             text-transform: uppercase;
             font-size: 0.75rem;
         }
-
-        /* --- Container du Logo --- */
         .logo-graphic-container {
             text-align: center;
             margin-bottom: 45px;
@@ -43,7 +40,6 @@ st.markdown("""
             transform: translateX(-50%);
             box-shadow: 0 10px 30px rgba(0,0,0,0.02);
         }
-
         .logo-text-base {
             font-family: 'Poppins', sans-serif !important;
             font-weight: 900 !important;
@@ -53,14 +49,7 @@ st.markdown("""
             margin: 0;
             display: inline-block;
         }
-
-        .logo-annales {
-            font-size: 4rem !important;
-            color: #2c3e50;
-            position: relative;
-            z-index: 1;
-        }
-
+        .logo-annales { font-size: 4rem !important; color: #2c3e50; position: relative; z-index: 1; }
         .logo-lab-badged {
             font-family: 'Permanent Marker', cursive !important;
             font-size: 1.7rem !important;
@@ -69,13 +58,11 @@ st.markdown("""
             padding: 2px 14px;
             border-radius: 40px;
             position: absolute;
-            top: 48px; 
-            right: 25px; 
+            top: 48px; right: 25px; 
             transform: rotate(-10deg);
             z-index: 2;
             box-shadow: 0 4px 12px rgba(252, 96, 118, 0.35);
         }
-
         .logo-chimie {
             font-size: 3.5rem !important;
             background: linear-gradient(135deg, #1f77b4 0%, #3498db 100%);
@@ -86,7 +73,6 @@ st.markdown("""
             margin-top: -5px;
             display: block;
         }
-
         .logo-sub-dynamic {
             font-family: 'Roboto', sans-serif !important;
             font-size: 0.9rem !important;
@@ -96,8 +82,6 @@ st.markdown("""
             margin-top: 18px;
             font-weight: 400;
         }
-
-        /* --- Harmonisation Streamlit --- */
         .stSlider [data-baseweb="slider"] div[role="presentation"] div { background-color: #fc6076 !important; }
         .stSlider [data-baseweb="slider"] div[role="slider"] { background-color: #fc6076 !important; border: 2px solid white !important; }
         div[data-testid="stThumbValue"] { color: #fc6076 !important; }
@@ -162,7 +146,7 @@ st.markdown("""
     </div>
     """, unsafe_allow_html=True)
 
-# --- CONTENU PRINCIPAL (Version Optimale Rétablie) ---
+# --- CONTENU PRINCIPAL ---
 with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
     c1, c2, c3 = st.columns(3)
     with c1:
@@ -170,36 +154,29 @@ with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
         st.info("⬅️ Utilisez la barre latérale pour choisir vos thèmes.")
     with c2:
         st.markdown("**2. Recherche**")
-        st.info("Cliquez sur le bouton bleu **🚀 Lancer la recherche**.")
+        st.info("Cliquez sur le bouton 🚀 **Lancer la recherche**.")
     with c3:
         st.markdown("**3. Analyse**")
         st.info("Les questions ciblées apparaîtront en bleu dans les détails.")
     
-    st.divider()
-    st.markdown("⚠️ *La liste des thématiques correspond au contenu des **programmes de CPGE**. Des niveaux de difficulté sont indiqués par rapport à un élève de CPGE. Ces derniers sont purement indicatifs et propres à l'interprétation des concepteurs de ce site.*")
+    # Espace réduit ici
+    st.markdown("<br><p style='font-size: 0.85rem; color: #666; font-style: italic;'>⚠️ La liste des thématiques correspond au contenu des programmes de CPGE. Des niveaux de difficulté sont indiqués par rapport à un élève de CPGE. Ces derniers sont purement indicatifs et propres à l'interprétation des concepteurs de ce site.</p>", unsafe_allow_html=True)
 
 # Barre latérale
 with st.sidebar:
     st.header("⚙️ Filtres")
     criteres = []
-    
-    # Correction de l'initialisation Facile - Difficile
     niveaux_lower = [n.lower().strip() for n in NIVEAUX_ORDRE]
     try:
-        start_idx = niveaux_lower.index("facile")
-        end_idx = niveaux_lower.index("difficile")
+        s_idx = niveaux_lower.index("facile")
+        e_idx = niveaux_lower.index("difficile")
     except ValueError:
-        start_idx, end_idx = 0, len(NIVEAUX_ORDRE) - 1
+        s_idx, e_idx = 0, len(NIVEAUX_ORDRE) - 1
 
     for n in range(st.session_state.nb_filtres):
         st.subheader(f"Filtre {n+1}")
         t = st.selectbox(f"Thème", THEMES_LISTE, key=f"t_{n}")
-        d_range = st.select_slider(
-            f"Difficulté", 
-            options=NIVEAUX_ORDRE, 
-            value=(NIVEAUX_ORDRE[start_idx], NIVEAUX_ORDRE[end_idx]), 
-            key=f"d_{n}"
-        )
+        d_range = st.select_slider(f"Difficulté", options=NIVEAUX_ORDRE, value=(NIVEAUX_ORDRE[s_idx], NIVEAUX_ORDRE[e_idx]), key=f"d_{n}")
         m = st.number_input(f"Quantité min.", min_value=1, value=1, key=f"m_{n}")
         criteres.append({"theme": t, "diff_range": d_range, "min": m})
     
@@ -213,12 +190,11 @@ if st.button("🚀 Lancer la recherche d'annales", type="primary", use_container
     trouves = []
     for s in data:
         q = s['questions']
-        valid = True
-        stats = []
+        valid, stats = True, []
         for c in criteres:
-            idx_min, idx_max = NIVEAUX_ORDRE.index(c['diff_range'][0]), NIVEAUX_ORDRE.index(c['diff_range'][1])
-            niveaux_acceptes = NIVEAUX_ORDRE[idx_min : idx_max + 1]
-            mask = (q['Thème'].astype(str).str.contains(c['theme'], case=False)) & (q['Difficulté'].astype(str).str.strip().isin(niveaux_acceptes))
+            i_min, i_max = NIVEAUX_ORDRE.index(c['diff_range'][0]), NIVEAUX_ORDRE.index(c['diff_range'][1])
+            n_acc = NIVEAUX_ORDRE[i_min : i_max + 1]
+            mask = (q['Thème'].astype(str).str.contains(c['theme'], case=False)) & (q['Difficulté'].astype(str).str.strip().isin(n_acc))
             count = len(q[mask])
             stats.append(f"{c['theme']} ({count})")
             if count < c['min']: valid = False; break
@@ -230,17 +206,20 @@ if st.button("🚀 Lancer la recherche d'annales", type="primary", use_container
 # Résultats
 if st.session_state.resultats_recherche:
     st.success(f"✅ {len(st.session_state.resultats_recherche)} sujets trouvés")
-    df_res = pd.DataFrame([{"Année": r['annee'], "Sujet": r['nom'], "Questions ciblées": r['stats']} for r in st.session_state.resultats_recherche])
-    st.table(df_res)
     
+    # Inversion des colonnes Sujet et Année + Masquage de l'index
+    df_res = pd.DataFrame([{"Sujet": r['nom'], "Année": r['annee'], "Questions ciblées": r['stats']} for r in st.session_state.resultats_recherche])
+    st.dataframe(df_res, use_container_width=True, hide_index=True)
+    
+    st.divider()
     choix = st.selectbox("🔍 Détails du sujet :", [r['label'] for r in st.session_state.resultats_recherche])
     sujet = next(r for r in st.session_state.resultats_recherche if r['label'] == choix)
     
     def highlight_rows(row):
         for c in criteres:
-            idx_min, idx_max = NIVEAUX_ORDRE.index(c['diff_range'][0]), NIVEAUX_ORDRE.index(c['diff_range'][1])
-            niveaux_acceptes = NIVEAUX_ORDRE[idx_min : idx_max + 1]
-            if c['theme'].lower() in str(row['Thème']).lower() and str(row['Difficulté']).strip() in niveaux_acceptes:
+            i_min, i_max = NIVEAUX_ORDRE.index(c['diff_range'][0]), NIVEAUX_ORDRE.index(c['diff_range'][1])
+            n_acc = NIVEAUX_ORDRE[i_min : i_max + 1]
+            if c['theme'].lower() in str(row['Thème']).lower() and str(row['Difficulté']).strip() in n_acc:
                 return ['background-color: #d1e7ff; color: black'] * len(row)
         return [''] * len(row)
 
