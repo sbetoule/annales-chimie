@@ -21,7 +21,28 @@ st.markdown("""
         .block-container {
             padding-top: 1.5rem !important;
         }
-    
+        /* Titres des résultats plus petits et serrés */
+        .result-title {
+            font-size: 1.1rem !important;
+            font-weight: 700;
+            margin-bottom: -5px !important;
+        }
+        /* Stats (sous-titre) plus discrètes */
+        .result-stats {
+            font-size: 0.85rem !important;
+            color: #666;
+            margin-bottom: 0px !important;
+        }
+        /* Titre de la section Détails */
+        .details-title {
+            font-size: 1.2rem !important;
+            margin-top: 20px !important;
+            color: #2c3e50;
+        }
+        /* Réduire l'espace des colonnes Streamlit */
+        [data-testid="column"] {
+            padding: 0px !important;
+        }
         .credits-compact {
             font-size: 0.85rem; color: #555; text-align: center;
             border-bottom: 1px solid #eee; padding-bottom: 10px;
@@ -148,8 +169,9 @@ with st.sidebar:
     col1, col2 = st.columns(2)
     if col1.button("➕ Ajouter"): st.session_state.nb_filtres += 1; st.rerun()
     if col2.button("🗑️ Effacer") and st.session_state.nb_filtres > 1: st.session_state.nb_filtres -= 1; st.rerun()
-
 if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container_width=True):
+    if 'sujet_selectionne' in st.session_state:
+        del st.session_state.sujet_selectionne
     with st.spinner("Analyse de la base de données en cours..."):
         data = charger_donnees(URL_CSV)
         trouves = []
@@ -202,24 +224,26 @@ if st.session_state.resultats_recherche:
     label_sujet = "sujet trouvé" if nb == 1 else "sujets trouvés"
     st.success(f"✅ {nb} {label_sujet}")
 
-    # On crée une grille pour afficher les sujets sous forme de cartes
+    # Conteneur pour limiter la hauteur si besoin (optionnel)
     for idx, r in enumerate(st.session_state.resultats_recherche):
-        with st.container():
-            # Mise en page de la "Carte"
-            col_txt, col_btn = st.columns([0.8, 0.2])
-            with col_txt:
-                st.markdown(f"### {r['nom']} ({r['annee']})")
-                st.caption(f"🎯 {r['stats']}")
-            with col_btn:
-                # Si on clique, on enregistre l'index dans le session_state
-                if st.button("Voir les détails", key=f"btn_{idx}", use_container_width=True):
-                    st.session_state.sujet_selectionne = r
-            st.divider()
+        # Utilisation de colonnes très asymétriques pour gagner de la place
+        c_text, c_btn = st.columns([0.85, 0.15])
+        
+        with c_text:
+            st.markdown(f"<p class='result-title'>{r['nom']} ({r['annee']})</p>", unsafe_allow_html=True)
+            st.markdown(f"<p class='result-stats'>🎯 {r['stats']}</p>", unsafe_allow_html=True)
+        
+        with c_btn:
+            # Bouton "Détails" petit et sobre
+            if st.button("Détails", key=f"btn_{idx}", use_container_width=True):
+                st.session_state.sujet_selectionne = r
+        
+        st.markdown("<div style='margin: -10px 0px 5px 0px; border-bottom: 1px solid #f0f0f0;'></div>", unsafe_allow_html=True)
 
-    # Si un sujet a été sélectionné, on affiche ses détails en dessous
+    # --- AFFICHAGE DES DÉTAILS ---
     if 'sujet_selectionne' in st.session_state:
         sujet = st.session_state.sujet_selectionne
-        st.markdown(f"## 🔍 Détails : {sujet['label']}")
+        st.markdown(f"<p class='details-title'>🔍 Détails : {sujet['label']}</p>", unsafe_allow_html=True)
         
         # --- LOGIQUE DU LIEN ---
         nom_comparaison = sujet['nom'].lower()
@@ -228,20 +252,19 @@ if st.session_state.resultats_recherche:
             lien_sujet = "https://www.sciencesalecole.org/olympiades-internationales-de-chimie-ressources/"
         elif "agrégation externe" in nom_comparaison:
             lien_sujet = "https://agregation-chimie.fr/index.php/les-epreuves-ecrites/annales-des-epreuves-ecrites"
-        # ... (ajoutez vos autres liens ici)
+        # ... (Gardez vos autres conditions ici)
 
         if lien_sujet:
-            st.link_button("📄 Lien vers le sujet complet", lien_sujet, type="primary")
+            # "secondary" pour le gris sobre, et texte corrigé
+            st.link_button("📄 Lien vers le sujet", lien_sujet, type="secondary")
 
-        # Affichage du tableau de questions avec surbrillance
+        # Table des questions (Style de surbrillance)
         def highlight_rows(row):
             for c in criteres:
                 try:
-                    i_min = NIVEAUX_ORDRE.index(c['diff_range'][0])
-                    i_max = NIVEAUX_ORDRE.index(c['diff_range'][1])
+                    i_min, i_max = NIVEAUX_ORDRE.index(c['diff_range'][0]), NIVEAUX_ORDRE.index(c['diff_range'][1])
                     n_acc = NIVEAUX_ORDRE[i_min : i_max + 1]
                 except: n_acc = NIVEAUX_ORDRE
-                
                 if c['theme'].lower() in str(row['Thème']).lower() and str(row['Difficulté']).strip() in n_acc:
                     return ['background-color: #d1e7ff; color: black'] * len(row)
             return [''] * len(row)
