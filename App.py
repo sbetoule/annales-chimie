@@ -25,6 +25,14 @@ def recuperer_listes(url_themes, url_niveaux):
 with st.spinner("Initialisation des thématiques..."):
     THEMES_LISTE, NIVEAUX_ORDRE = recuperer_listes(URL_THEMES, URL_NIVEAUX)
 
+with st.sidebar:
+    st.write("### 🔍 Diagnostic Source")
+    if not THEMES_LISTE or THEMES_LISTE == ["Erreur"]:
+        st.error("❌ Les thèmes n'ont pas pu être chargés depuis Google Sheets.")
+    else:
+        st.success(f"✅ {len(THEMES_LISTE)} thèmes chargés.")
+        st.write("Aperçu :", THEMES_LISTE[:3]) # Affiche les 3 premiers
+
 if 'resultats_recherche' not in st.session_state: st.session_state.resultats_recherche = None
 if 'nb_filtres' not in st.session_state: st.session_state.nb_filtres = 1
 
