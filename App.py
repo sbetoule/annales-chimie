@@ -29,11 +29,11 @@ st.markdown("""
             font-size: 0.75rem;
         }
 
-        /* --- Container du Logo (Padding réduit en bas) --- */
+        /* --- Container du Logo --- */
         .logo-graphic-container {
             text-align: center;
             margin-bottom: 45px;
-            padding: 25px 40px 5px 40px; /* Réduit de 25px à 0px en bas */
+            padding: 25px 40px 15px 40px; 
             background: linear-gradient(165deg, rgba(255, 154, 68, 0.05) 0%, rgba(252, 96, 118, 0.08) 100%);
             border-radius: 50px 15px 70px 20px;
             display: inline-block;
@@ -80,23 +80,21 @@ st.markdown("""
             display: block;
         }
 
-        /* --- Sous-titre (Espace réduit avec le haut) --- */
         .logo-sub-dynamic {
             font-family: 'Roboto', sans-serif !important;
             font-size: 0.9rem !important;
             color: #95a5a6;
             text-transform: uppercase;
             letter-spacing: 5px;
-            margin-top: 8px; /* Réduit de 18px à 8px */
+            margin-top: 8px; 
             font-weight: 400;
         }
 
-        /* Style pour coller l'avertissement CPGE aux colonnes */
         .cpge-warning {
             font-size: 0.85rem; 
             color: #666; 
             font-style: italic; 
-            margin-top: -10px; /* Remonte le texte */
+            margin-top: -10px; 
         }
 
         .stSlider [data-baseweb="slider"] div[role="presentation"] div { background-color: #fc6076 !important; }
@@ -174,12 +172,11 @@ with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
         st.info("Cliquez sur le bouton 🚀 **Lancer la recherche**.")
     with c3:
         st.markdown("**3. Analyse**")
-        st.info("Les questions ciblées apparaîtront en bleu dans les détails.")
+        st.info("⬇️ Les questions ciblées apparaîtront en bleu dans les détails.")
     
-    # Texte d'avertissement avec classe CSS dédiée pour l'espacement
     st.markdown("<p class='cpge-warning'>⚠️ La liste des thématiques correspond au contenu des programmes de CPGE. Des niveaux de difficulté sont indiqués par rapport à un élève de CPGE. Ces derniers sont purement indicatifs et propres à l'interprétation des concepteurs de ce site.</p>", unsafe_allow_html=True)
 
-# Barre latérale (conservée à l'identique)
+# Barre latérale
 with st.sidebar:
     st.header("⚙️ Filtres")
     criteres = []
@@ -200,7 +197,7 @@ with st.sidebar:
     if col1.button("➕ Ajouter"): st.session_state.nb_filtres += 1; st.rerun()
     if col2.button("🗑️ Effacer") and st.session_state.nb_filtres > 1: st.session_state.nb_filtres -= 1; st.rerun()
 
-# Logique de recherche et résultats (Inversion colonnes et masquage index)
+# Logique de recherche
 if st.button("🚀 Lancer la recherche d'annales", type="primary", use_container_width=True):
     data = charger_donnees(URL_CSV)
     trouves = []
