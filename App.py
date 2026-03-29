@@ -4,14 +4,85 @@ import pandas as pd
 # Configuration de la page
 st.set_page_config(page_title="Annales Lab Chimie", layout="wide")
 
-# --- TEST DE SURVIE (SCÉNARIO B) ---
-st.write("### Diagnostic : Si vous voyez ce message, le script fonctionne.")
-st.sidebar.success("La sidebar est active !")
+# --- STYLE CSS CORRIGÉ ---
+st.markdown("""
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@800;900&family=Permanent+Marker&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Masquer les éléments inutiles du header mais GARDER le bouton sidebar */
+        [data-testid="stToolbar"], [data-testid="stDecoration"] {
+            display: none !important;
+        }
+        
+        /* Ajustement de l'expander */
+        .stExpander summary p {
+            font-size: 0.95rem !important;
+            color: #2c3e50;
+        }
+
+        .stExpander:focus {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+
+        .block-container {
+            padding-top: 2rem !important;
+        }
+
+        /* Credits & Logo */
+        .credits-compact {
+            font-size: 0.85rem; color: #555; text-align: center;
+            border-bottom: 1px solid #eee; padding-bottom: 10px;
+            margin-bottom: 30px; font-family: 'Roboto', sans-serif; line-height: 1.5;
+        }
+        .logo-graphic-container {
+            text-align: center; margin-bottom: 45px; padding: 25px 40px 5px 40px; 
+            background: linear-gradient(165deg, rgba(255, 154, 68, 0.05) 0%, rgba(252, 96, 118, 0.08) 100%);
+            border-radius: 50px 15px 70px 20px; display: inline-block;
+            position: relative; left: 50%; transform: translateX(-50%);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.02);
+        }
+        .logo-text-base { font-family: 'Poppins', sans-serif !important; font-weight: 900 !important; text-transform: uppercase; letter-spacing: -2px; line-height: 0.85; margin: 0; display: inline-block; }
+        .logo-annales { font-size: 4rem !important; color: #2c3e50; position: relative; z-index: 1; }
+        .logo-lab-badged {
+            font-family: 'Permanent Marker', cursive !important; font-size: 1.7rem !important;
+            color: #ffffff; background: linear-gradient(135deg, #ff9a44 0%, #fc6076 100%); 
+            padding: 2px 14px; border-radius: 40px; position: absolute;
+            top: 48px; right: 25px; transform: rotate(-10deg); z-index: 2;
+        }
+        .logo-chimie {
+            font-size: 3.5rem !important; background: linear-gradient(135deg, #1f77b4 0%, #3498db 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; text-fill-color: transparent; margin-top: -5px; display: block;
+        }
+        .logo-sub-dynamic { font-family: 'Roboto', sans-serif !important; font-size: 0.9rem !important; color: #95a5a6; text-transform: uppercase; letter-spacing: 5px; margin-top: 8px; font-weight: 400; }
+        
+        /* Animation du bouton Sidebar pour qu'il reste visible et stylisé */
+        [data-testid="stSidebarCollapseIcon"] {
+            background-color: #fc6076 !important; color: white !important; border-radius: 50% !important; padding: 5px !important; 
+            animation: pulse-red 2s infinite;
+        }
+        
+        @keyframes pulse-red {
+            0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(252, 96, 118, 0.7); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(252, 96, 118, 0); }
+            100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(252, 96, 118, 0); }
+        }
+
+        .cpge-warning { font-size: 0.85rem; color: #666; font-style: italic; margin-top: -10px; }
+        .stSlider [data-baseweb="slider"] div[role="presentation"] div { background-color: #fc6076 !important; }
+        .stSlider [data-baseweb="slider"] div[role="slider"] { background-color: #fc6076 !important; border: 2px solid white !important; }
+        div[data-testid="stThumbValue"] { color: #fc6076 !important; }
+    </style>
+    """, unsafe_allow_html=True)
 
 # --- CONFIGURATION DONNÉES ---
 URL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsADsmsMnYgQXIUlU25_FlKrtTffM5XOL69taw9Pco8AHV4suIUtT0tg384XBtBAo28qGKGbtSJtIy/pub?gid=0&single=true&output=csv"
 URL_THEMES = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsADsmsMnYgQXIUlU25_FlKrtTffM5XOL69taw9Pco8AHV4suIUtT0tg384XBtBAo28qGKGbtSJtIy/pub?gid=1733310474&single=true&output=csv"
 URL_NIVEAUX = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsADsmsMnYgQXIUlU25_FlKrtTffM5XOL69taw9Pco8AHV4suIUtT0tg384XBtBAo28qGKGbtSJtIy/pub?gid=1879771001&single=true&output=csv"
+
 @st.cache_data(ttl=60)
 def recuperer_listes(url_themes, url_niveaux):
     try:
@@ -24,14 +95,6 @@ def recuperer_listes(url_themes, url_niveaux):
 
 with st.spinner("Initialisation des thématiques..."):
     THEMES_LISTE, NIVEAUX_ORDRE = recuperer_listes(URL_THEMES, URL_NIVEAUX)
-
-with st.sidebar:
-    st.write("### 🔍 Diagnostic Source")
-    if not THEMES_LISTE or THEMES_LISTE == ["Erreur"]:
-        st.error("❌ Les thèmes n'ont pas pu être chargés depuis Google Sheets.")
-    else:
-        st.success(f"✅ {len(THEMES_LISTE)} thèmes chargés.")
-        st.write("Aperçu :", THEMES_LISTE[:3]) # Affiche les 3 premiers
 
 if 'resultats_recherche' not in st.session_state: st.session_state.resultats_recherche = None
 if 'nb_filtres' not in st.session_state: st.session_state.nb_filtres = 1
@@ -62,6 +125,7 @@ st.markdown("""
     <b>Morgane Leite</b> (Resp. prépa agrégation de chimie, ENS)
 </div>
 """, unsafe_allow_html=True)
+
 st.markdown("""
     <div class="logo-graphic-container">
         <span class="logo-text-base logo-annales">Annales</span>
@@ -79,7 +143,7 @@ with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
         st.markdown("**2. Recherche**"); st.info("Cliquez sur le bouton 🔎 **Lancer la recherche**.")
     with c3:
         st.markdown("**3. Analyse**"); st.info("⬇️ Les questions ciblées apparaîtront en bleu dans les détails.")
-    st.markdown("<p class='cpge-warning'>⚠️ La liste des thématiques correspond au contenu des programmes de CPGE. Des niveaux de difficulté sont indiqués par rapport à un élève de CPGE. Ces derniers sont purement indicatifs et propres à l'interprétation des concepteurs de ce site.</p>", unsafe_allow_html=True)
+    st.markdown("<p class='cpge-warning'>⚠️ La liste des thématiques correspond au contenu des programmes de CPGE. Des niveaux de difficulté sont indiqués par rapport à un élève de CPGE.</p>", unsafe_allow_html=True)
 
 # --- BARRE LATÉRALE ---
 with st.sidebar:
@@ -99,114 +163,54 @@ with st.sidebar:
     col1, col2 = st.columns(2)
     if col1.button("➕ Ajouter"): st.session_state.nb_filtres += 1; st.rerun()
     if col2.button("🗑️ Effacer") and st.session_state.nb_filtres > 1: st.session_state.nb_filtres -= 1; st.rerun()
+
+# --- BOUTON DE RECHERCHE ---
 if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container_width=True):
-    if 'sujet_selectionne' in st.session_state:
-        del st.session_state.sujet_selectionne
-    with st.spinner("Analyse de la base de données en cours..."):
+    with st.spinner("Analyse de la base de données..."):
         data = charger_donnees(URL_CSV)
-        if st.button("🔎 Lancer la recherche d'annales"):
-            data = charger_donnees(URL_CSV)
-            
-            st.write("### 🔍 Diagnostic Structure CSV")
-            if not data:
-                st.error("❌ Le fichier principal est vide ou inaccessible.")
-            else:
-                st.info(f"Sujets détectés : {len(data)}")
-                # On vérifie le premier sujet pour voir si les colonnes sont au bon endroit
-                premier_sujet = data[0]
-                st.write(f"Vérification du sujet : **{premier_sujet['nom']}**")
-                st.write("Colonnes détectées :", premier_sujet['questions'].columns.tolist())
-                st.dataframe(premier_sujet['questions'].head(2)) # Affiche les 2 premières lignes
-                trouves = []
-        
+        trouves = []
         for s in data:
             q = s['questions']
             valid = True
             stats = []
-            
-            # On crée une copie propre de la colonne Thème pour éviter les espaces ou majuscules parasites
             themes_sujet = q['Thème'].astype(str).str.strip().str.lower()
             difficultes_sujet = q['Difficulté'].astype(str).str.strip().str.lower()
-
             for c in criteres:
-                # Préparation du critère (nettoyage)
                 theme_recherche = str(c['theme']).strip().lower()
-                
-                # Récupération de la plage de difficulté
                 try:
                     idx_start = NIVEAUX_ORDRE.index(c['diff_range'][0])
                     idx_end = NIVEAUX_ORDRE.index(c['diff_range'][1])
                     n_acc = [n.lower().strip() for n in NIVEAUX_ORDRE[idx_start : idx_end + 1]]
-                except:
-                    n_acc = [n.lower().strip() for n in NIVEAUX_ORDRE]
-
-                # --- LA LOGIQUE DE FILTRAGE ---
-                # On vérifie si le thème recherché est contenu dans le texte de la cellule
+                except: n_acc = [n.lower().strip() for n in NIVEAUX_ORDRE]
                 mask_theme = themes_sujet.str.contains(theme_recherche, regex=False, na=False)
                 mask_diff = difficultes_sujet.isin(n_acc)
-                
                 count = len(q[mask_theme & mask_diff])
                 stats.append(f"{c['theme']} ({count})")
-                
-                # Si le nombre de questions pour ce thème est insuffisant, on rejette le sujet
                 if count < c['min']:
                     valid = False
                     break 
-
             if valid:
                 s['stats'] = " | ".join(stats)
                 trouves.append(s)
-        
-        # --- NOUVEAU SYSTÈME DE TRI ---
-        trouves.sort(key=lambda x: x['nom'].lower()) # Tri alphabétique A-Z
-        st.session_state.resultats_recherche = sorted(trouves, key=lambda x: x['annee'], reverse=True) # Tri année 2024-2000
-        
-# --- RÉSULTATS ET DÉTAILS ---
+        st.session_state.resultats_recherche = sorted(trouves, key=lambda x: x['annee'], reverse=True)
+
+# --- RÉSULTATS ---
 if st.session_state.resultats_recherche:
     nb = len(st.session_state.resultats_recherche)
-    label_sujet = "sujet trouvé" if nb == 1 else "sujets trouvés"
-    st.success(f"✅ {nb} {label_sujet}")
-
+    st.success(f"✅ {nb} {'sujet trouvé' if nb == 1 else 'sujets trouvés'}")
     for idx, r in enumerate(st.session_state.resultats_recherche):
-        # On utilise une flèche ou un séparateur pour bien distinguer les deux parties
-        # Le gras de l'expander s'appliquera, mais la séparation sera nette
-        titre_header = f"📄 {r['nom']} ({r['annee']})  |  {r['stats']}"
-        
-        with st.expander(titre_header):
-            # Optionnel : On rappelle le titre avec le vrai style à l'intérieur
-            st.markdown(f"""
-                <div style="margin-bottom: 15px;">
-                    <span style="color: #2c3e50; font-weight: 700; font-size: 1.1rem;">📄 {r['nom']} ({r['annee']})</span>
-                    <span style="color: #888; font-weight: 400; margin-left: 10px;">• {r['stats']}</span>
-                </div>
-            """, unsafe_allow_html=True)
-            # --- LOGIQUE DU LIEN ---
+        with st.expander(f"📄 {r['nom']} ({r['annee']})  |  {r['stats']}"):
             nom_comparaison = r['nom'].lower()
             lien_sujet = None
-            if "présélection icho" in nom_comparaison:
-                lien_sujet = "https://www.sciencesalecole.org/olympiades-internationales-de-chimie-ressources/"
-            elif "agrégation externe spéciale" in nom_comparaison:
-                lien_sujet = "https://agregation-chimie.fr/index.php/composition-de-physique-chimie/annales-des-epreuves-ecrites"
-            elif "agrégation externe" in nom_comparaison:
-                lien_sujet = "https://agregation-chimie.fr/index.php/les-epreuves-ecrites/annales-des-epreuves-ecrites"
-            elif "capes" in nom_comparaison:
-                lien_sujet = "http://b.louchart.free.fr/Concours_et_examens/CAPES/CAPES_externe_Physique_Chimie/Sujets_et_corriges_ecrits.htmls"
-
-            if lien_sujet:
-                st.link_button("📄 Lien vers le sujet", lien_sujet, type="secondary")
-
-            # Fonction de surbrillance
+            if "présélection icho" in nom_comparaison: lien_sujet = "https://www.sciencesalecole.org/olympiades-internationales-de-chimie-ressources/"
+            elif "agrégation" in nom_comparaison: lien_sujet = "https://agregation-chimie.fr/index.php/composition-de-physique-chimie/annales-des-epreuves-ecrites"
+            if lien_sujet: st.link_button("📄 Lien vers le sujet", lien_sujet)
+            
             def highlight_rows(row):
                 for c in criteres:
-                    try:
-                        i_min, i_max = NIVEAUX_ORDRE.index(c['diff_range'][0]), NIVEAUX_ORDRE.index(c['diff_range'][1])
-                        n_acc = NIVEAUX_ORDRE[i_min : i_max + 1]
-                    except: n_acc = NIVEAUX_ORDRE
-                    if c['theme'].lower() in str(row['Thème']).lower() and str(row['Difficulté']).strip() in n_acc:
+                    if c['theme'].lower() in str(row['Thème']).lower():
                         return ['background-color: #d1e7ff; color: black'] * len(row)
                 return [''] * len(row)
-
             st.dataframe(r['questions'].style.apply(highlight_rows, axis=1), use_container_width=True, hide_index=True)
-
 elif st.session_state.resultats_recherche == []:
     st.warning("Aucun résultat.")
