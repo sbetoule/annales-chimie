@@ -4,72 +4,18 @@ import pandas as pd
 # Configuration de la page
 st.set_page_config(page_title="Annales Lab Chimie", layout="wide")
 
-# --- STYLE CSS (LOGO, CRÉDITS, ANIMATION MOBILE & FORCE LIGHT MODE GLOBAL) ---
+# --- STYLE CSS (LOGO, CRÉDITS, ANIMATION MOBILE) ---
 st.markdown("""
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@800;900&family=Permanent+Marker&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
-        /* --- 1. FORCE LIGHT MODE GLOBAL (Anti-mode sombre Streamlit) --- */
-        /* Force les variables de base */
-        :root {
-            --primary-color: #fc6076;
-            --background-color: #ffffff;
-            --secondary-background-color: #f0f2f6;
-            --text-color: #262730;
-        }
-
-        /* Force le fond de l'application et de la sidebar */
-        .stApp, [data-testid="stHeader"] {
-            background-color: white !important;
-            color: #262730 !important;
-        }
-
-        [data-testid="stSidebar"] {
-            background-color: #f0f2f6 !important;
-        }
-
-        /* Force la couleur de TOUS les textes standard */
-        h1, h2, h3, h4, h5, h6, p, span, label, li, .stMarkdown {
-            color: #262730 !important;
-        }
-
-        /* --- 2. FORCE LE STYLE DES BOUTONS (Même en mode sombre) --- */
-        /* Ciblage agressif des boutons primaires, secondaires et link_buttons */
-        div.stButton > button, div.stLinkButton > a {
-            background-color: white !important;
-            color: #262730 !important;
-            border: 1px solid #d3d3d3 !important;
-        }
-
-        /* Au survol */
-        div.stButton > button:hover, div.stLinkButton > a:hover {
-            border-color: #fc6076 !important;
-            color: #fc6076 !important;
-            background-color: white !important;
-        }
-
-        /* Boutons Primary (Recherche) */
-        div.stButton > button[kind="primary"] {
-            background: linear-gradient(135deg, #1f77b4 0%, #3498db 100%) !important;
-            color: white !important;
-            border: none !important;
-        }
-        
-        div.stButton > button[kind="primary"]:hover {
-            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3) !important;
-        }
-
-        /* --- 3. DESIGN DE L'INTERFACE --- */
-        /* Crédits */
         .credits-compact {
             font-size: 0.85rem; color: #555; text-align: center;
             border-bottom: 1px solid #eee; padding-bottom: 10px;
             margin-bottom: 30px; font-family: 'Roboto', sans-serif; line-height: 1.5;
         }
-
-        /* Container du Logo */
         .logo-graphic-container {
             text-align: center; margin-bottom: 45px; padding: 25px 40px 15px 40px; 
             background: linear-gradient(165deg, rgba(255, 154, 68, 0.05) 0%, rgba(252, 96, 118, 0.08) 100%);
@@ -77,34 +23,21 @@ st.markdown("""
             position: relative; left: 50%; transform: translateX(-50%);
             box-shadow: 0 10px 30px rgba(0,0,0,0.02);
         }
-
         .logo-text-base { font-family: 'Poppins', sans-serif !important; font-weight: 900 !important; text-transform: uppercase; letter-spacing: -2px; line-height: 0.85; margin: 0; display: inline-block; }
         .logo-annales { font-size: 4rem !important; color: #2c3e50; position: relative; z-index: 1; }
-        
-        /* --- CORRECTION LOGO LAB (REMIS EN BLANC) --- */
         .logo-lab-badged {
             font-family: 'Permanent Marker', cursive !important; font-size: 1.7rem !important;
-            /* Fond blanc original */
-            background: white !important;
-            /* Texte en dégradé corail/orange original */
-            background: linear-gradient(135deg, #ff9a44 0%, #fc6076 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            
+            color: #ffffff; background: linear-gradient(135deg, #ff9a44 0%, #fc6076 100%); 
             padding: 2px 14px; border-radius: 40px; position: absolute;
             top: 48px; right: 25px; transform: rotate(-10deg); z-index: 2;
-            box-shadow: 0 4px 12px rgba(252, 96, 118, 0.15);
         }
-
         .logo-chimie {
             font-size: 3.5rem !important; background: linear-gradient(135deg, #1f77b4 0%, #3498db 100%);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             background-clip: text; text-fill-color: transparent; margin-top: -5px; display: block;
         }
-
         .logo-sub-dynamic { font-family: 'Roboto', sans-serif !important; font-size: 0.9rem !important; color: #95a5a6; text-transform: uppercase; letter-spacing: 5px; margin-top: 8px; font-weight: 400; }
         
-        /* Animation mobile bouton sidebar */
         [data-testid="stSidebarCollapseIcon"] {
             background-color: #fc6076 !important; color: white !important; border-radius: 50% !important; padding: 5px !important; animation: pulse-red 2s infinite;
         }
@@ -113,10 +46,7 @@ st.markdown("""
             70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(252, 96, 118, 0); }
             100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(252, 96, 118, 0); }
         }
-
         .cpge-warning { font-size: 0.85rem; color: #666; font-style: italic; margin-top: -10px; }
-        
-        /* Sliders */
         .stSlider [data-baseweb="slider"] div[role="presentation"] div { background-color: #fc6076 !important; }
         .stSlider [data-baseweb="slider"] div[role="slider"] { background-color: #fc6076 !important; border: 2px solid white !important; }
         div[data-testid="stThumbValue"] { color: #fc6076 !important; }
@@ -196,7 +126,7 @@ with st.sidebar:
         d_range = st.select_slider(f"Difficulté", options=NIVEAUX_ORDRE, value=(NIVEAUX_ORDRE[s_idx], NIVEAUX_ORDRE[e_idx]), key=f"d_{n}")
         m = st.number_input(f"Quantité min.", min_value=1, value=1, key=f"m_{n}")
         criteres.append({"theme": t, "diff_range": d_range, "min": m})
-    
+
     col1, col2 = st.columns(2)
     if col1.button("➕ Ajouter"): st.session_state.nb_filtres += 1; st.rerun()
     if col2.button("🗑️ Effacer") and st.session_state.nb_filtres > 1: st.session_state.nb_filtres -= 1; st.rerun()
@@ -225,28 +155,28 @@ if st.session_state.resultats_recherche:
     st.success(f"✅ {len(st.session_state.resultats_recherche)} sujets trouvés")
     df_res = pd.DataFrame([{"Sujet": r['nom'], "Année": r['annee'], "Questions ciblées": r['stats']} for r in st.session_state.resultats_recherche])
     st.dataframe(df_res, use_container_width=True, hide_index=True)
-    
+
     st.divider()
     choix = st.selectbox("🔍 Détails du sujet :", [r['label'] for r in st.session_state.resultats_recherche])
     sujet = next(r for r in st.session_state.resultats_recherche if r['label'] == choix)
-    
+
     # --- LOGIQUE DU BOUTON DE LIEN ---
     lien_sujet = None
     nom_comparaison = sujet['nom'].lower()
-    
+
     if "présélection icho" in nom_comparaison:
         lien_sujet = "https://www.sciencesalecole.org/olympiades-internationales-de-chimie-ressources/"
     elif "agrégation externe spéciale" in nom_comparaison:
         lien_sujet = "https://agregation-chimie.fr/index.php/composition-de-physique-chimie/annales-des-epreuves-ecrites"
     elif "agrégation externe" in nom_comparaison:
         lien_sujet = "https://agregation-chimie.fr/index.php/les-epreuves-ecrites/annales-des-epreuves-ecrites"
-    elif "capes" in nom_comparaison:
-        lien_sujet = "http://b.louchart.free.fr/Concours_et_examens/CAPES/CAPES_externe_Physique_Chimie/Sujets_et_corriges_ecrits.html"
-    
+    elif "CAPES" in nom_comparaison:
+        lien_sujet = "http://b.louchart.free.fr/Concours_et_examens/CAPES/CAPES_externe_Physique_Chimie/Sujets_et_corriges_ecrits.htmls"
+
     if lien_sujet:
-        # Bouton forcé sobre par CSS
-        st.link_button("📄 Lien vers le sujet", lien_sujet)
-    
+        # Bouton sobre (secondary) et largeur réduite (pas de use_container_width)
+        st.link_button("📄 Lien vers le sujet", lien_sujet, type="secondary")
+
     def highlight_rows(row):
         for c in criteres:
             i_min, i_max = NIVEAUX_ORDRE.index(c['diff_range'][0]), NIVEAUX_ORDRE.index(c['diff_range'][1])
