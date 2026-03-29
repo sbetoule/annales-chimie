@@ -15,7 +15,23 @@ st.markdown("""
         header[data-testid="stHeader"] {
             display: none !important;
         }
+        /* Style du texte à l'intérieur de la barre de l'expander */
+        .stExpander summary p {
+            font-size: 0.95rem !important;
+            color: #888; /* Couleur grise par défaut pour tout le titre */
+        }
+        
+        /* On force le début du texte (le nom du sujet) en noir et gras */
+        .stExpander summary p::first-line {
+            color: #2c3e50 !important;
+            font-weight: 700 !important;
+        }
 
+        /* Optionnel : Enlever la bordure rouge de l'expander quand on clique dessus */
+        .stExpander:focus {
+            outline: none !important;
+            box-shadow: none !important;
+        }
         /* Ajustement de la marge pour que le texte "Qui sommes-nous" 
            ne soit pas trop collé au bord maintenant que le header est parti */
         .block-container {
@@ -224,25 +240,16 @@ if st.session_state.resultats_recherche:
     label_sujet = "sujet trouvé" if nb == 1 else "sujets trouvés"
     st.success(f"✅ {nb} {label_sujet}")
 
-    # Conteneur pour limiter la hauteur si besoin (optionnel)
     for idx, r in enumerate(st.session_state.resultats_recherche):
-        # Utilisation de colonnes très asymétriques pour gagner de la place
-        c_text, c_btn = st.columns([0.85, 0.15])
-        
-        with c_text:
-            st.markdown(f"<p class='result-title'>{r['nom']} ({r['annee']})</p>", unsafe_allow_html=True)
-            st.markdown(f"<p class='result-stats'>{r['stats']}</p>", unsafe_allow_html=True)
-        
-        with c_btn:
-            # Bouton "Détails" petit et sobre
-            if st.button("Détails", key=f"btn_{idx}", use_container_width=True):
-                st.session_state.sujet_selectionne = r
-        
-        st.markdown("<div style='margin: -10px 0px 5px 0px; border-bottom: 1px solid #f0f0f0;'></div>", unsafe_allow_html=True)
         # Chaque sujet devient un accordéon cliquable
         # On affiche le titre et les stats directement dans la barre de l'expander
         with st.expander(f"📄 {r['nom']} ({r['annee']}) — {r['stats']}"):
             
+        # On formate le titre de l'expander : 
+        # Le nom est en gras, les thèmes sont après un point médian, en texte normal
+        titre_header = f"📄 {r['nom']} ({r['annee']})  •  {r['stats']}"
+        
+        with st.expander(titre_header):
             # --- LOGIQUE DU LIEN ---
             nom_comparaison = r['nom'].lower()
             lien_sujet = None
@@ -255,26 +262,11 @@ if st.session_state.resultats_recherche:
             elif "capes" in nom_comparaison:
                 lien_sujet = "http://b.louchart.free.fr/Concours_et_examens/CAPES/CAPES_externe_Physique_Chimie/Sujets_et_corriges_ecrits.htmls"
 
-    # --- AFFICHAGE DES DÉTAILS ---
-    if 'sujet_selectionne' in st.session_state:
-        sujet = st.session_state.sujet_selectionne
-        st.markdown(f"<p class='details-title'>🔍 Détails : {sujet['label']}</p>", unsafe_allow_html=True)
-        
-        # --- LOGIQUE DU LIEN ---
-        nom_comparaison = sujet['nom'].lower()
-        lien_sujet = None
-        if "présélection icho" in nom_comparaison:
-            lien_sujet = "https://www.sciencesalecole.org/olympiades-internationales-de-chimie-ressources/"
-        elif "agrégation externe" in nom_comparaison:
-            lien_sujet = "https://agregation-chimie.fr/index.php/les-epreuves-ecrites/annales-des-epreuves-ecrites"
-        # ... (Gardez vos autres conditions ici)
             if lien_sujet:
                 st.link_button("📄 Lien vers le sujet", lien_sujet, type="secondary")
 
-        if lien_sujet:
-            # "secondary" pour le gris sobre, et texte corrigé
-            st.link_button("📄 Lien vers le sujet", lien_sujet, type="secondary")
             # Fonction de surbrillance locale au sujet
+            # Fonction de surbrillance
             def highlight_rows(row):
                 for c in criteres:
                     try:
@@ -285,19 +277,8 @@ if st.session_state.resultats_recherche:
                         return ['background-color: #d1e7ff; color: black'] * len(row)
                 return [''] * len(row)
 
-        # Table des questions (Style de surbrillance)
-        def highlight_rows(row):
-            for c in criteres:
-                try:
-                    i_min, i_max = NIVEAUX_ORDRE.index(c['diff_range'][0]), NIVEAUX_ORDRE.index(c['diff_range'][1])
-                    n_acc = NIVEAUX_ORDRE[i_min : i_max + 1]
-                except: n_acc = NIVEAUX_ORDRE
-                if c['theme'].lower() in str(row['Thème']).lower() and str(row['Difficulté']).strip() in n_acc:
-                    return ['background-color: #d1e7ff; color: black'] * len(row)
-            return [''] * len(row)
             # Affichage du tableau spécifique à ce sujet
             st.dataframe(r['questions'].style.apply(highlight_rows, axis=1), use_container_width=True, hide_index=True)
 
-        st.dataframe(sujet['questions'].style.apply(highlight_rows, axis=1), use_container_width=True, hide_index=True)
 elif st.session_state.resultats_recherche == []:
     st.warning("Aucun résultat.")
