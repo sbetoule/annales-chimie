@@ -11,56 +11,91 @@ st.markdown("""
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@800;900&family=Permanent+Marker&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
-        header[data-testid="stHeader"] { display: none !important; }
-        
-        /* Cache complètement le contenu du titre de l'expander */
-        .stExpander summary p {
+        /* Masquer complètement la barre d'outils Streamlit en haut */
+        header[data-testid="stHeader"] {
             display: none !important;
         }
         
-        /* Supprime le padding inutile en haut de l'intérieur de l'expander */
-        .stExpander [data-testid="stExpanderDetails"] {
-            padding-top: 1rem !important;
-        }
-        
-        /* Ajustement du container de titre personnalisé */
-        .custom-title-container {
-            margin-top: -35px; /* On remonte le titre pour combler le vide laissé par le titre masqué */
-            margin-bottom: 20px;
-            font-size: 1rem;
-            border-bottom: 1px solid #f0f2f6;
-            padding-bottom: 10px;
-        }
-        .title-bold {
-            color: #2c3e50;
-            font-weight: 700;
-        }
-        .title-stats {
-            color: #888;
-            font-weight: 400;
-            font-size: 0.85rem;
-            margin-left: 8px;
+      /* Style de base du texte dans l'expander */
+        .stExpander summary p {
+            font-size: 0.95rem !important;
+            color: #2c3e50; /* Couleur sombre pour le titre */
         }
 
-        .block-container { padding-top: 1.5rem !important; }
-        [data-testid="column"] { padding: 0px !important; }
-        
-        /* ... Styles Logo & UI ... */
-        .credits-compact { font-size: 0.85rem; color: #555; text-align: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 30px; font-family: 'Roboto', sans-serif; line-height: 1.5; }
-        .logo-graphic-container { text-align: center; margin-bottom: 45px; padding: 25px 40px 5px 40px; background: linear-gradient(165deg, rgba(255, 154, 68, 0.05) 0%, rgba(252, 96, 118, 0.08) 100%); border-radius: 50px 15px 70px 20px; display: inline-block; position: relative; left: 50%; transform: translateX(-50%); box-shadow: 0 10px 30px rgba(0,0,0,0.02); }
+        /* On retire la règle ::first-line qui causait le bug */
+        /* Optionnel : Enlever la bordure rouge de l'expander quand on clique dessus */
+        .stExpander:focus {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+        /* Ajustement de la marge pour que le texte "Qui sommes-nous" 
+           ne soit pas trop collé au bord maintenant que le header est parti */
+        .block-container {
+            padding-top: 1.5rem !important;
+        }
+        /* Titres des résultats plus petits et serrés */
+        .result-title {
+            font-size: 1.1rem !important;
+            font-weight: 700;
+            margin-bottom: -5px !important;
+        }
+        /* Stats (sous-titre) plus discrètes */
+        .result-stats {
+            font-size: 0.85rem !important;
+            color: #666;
+            margin-bottom: 0px !important;
+        }
+        /* Titre de la section Détails */
+        .details-title {
+            font-size: 1.2rem !important;
+            margin-top: 20px !important;
+            color: #2c3e50;
+        }
+        /* Réduire l'espace des colonnes Streamlit */
+        [data-testid="column"] {
+            padding: 0px !important;
+        }
+        .credits-compact {
+            font-size: 0.85rem; color: #555; text-align: center;
+            border-bottom: 1px solid #eee; padding-bottom: 10px;
+            margin-bottom: 30px; font-family: 'Roboto', sans-serif; line-height: 1.5;
+        }
+        .logo-graphic-container {
+            text-align: center; margin-bottom: 45px; padding: 25px 40px 5px 40px; 
+            background: linear-gradient(165deg, rgba(255, 154, 68, 0.05) 0%, rgba(252, 96, 118, 0.08) 100%);
+            border-radius: 50px 15px 70px 20px; display: inline-block;
+            position: relative; left: 50%; transform: translateX(-50%);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.02);
+        }
         .logo-text-base { font-family: 'Poppins', sans-serif !important; font-weight: 900 !important; text-transform: uppercase; letter-spacing: -2px; line-height: 0.85; margin: 0; display: inline-block; }
         .logo-annales { font-size: 4rem !important; color: #2c3e50; position: relative; z-index: 1; }
-        .logo-lab-badged { font-family: 'Permanent Marker', cursive !important; font-size: 1.7rem !important; color: #ffffff; background: linear-gradient(135deg, #ff9a44 0%, #fc6076 100%); padding: 2px 14px; border-radius: 40px; position: absolute; top: 48px; right: 25px; transform: rotate(-10deg); z-index: 2; }
-        .logo-chimie { font-size: 3.5rem !important; background: linear-gradient(135deg, #1f77b4 0%, #3498db 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-fill-color: transparent; margin-top: -5px; display: block; }
+        .logo-lab-badged {
+            font-family: 'Permanent Marker', cursive !important; font-size: 1.7rem !important;
+            color: #ffffff; background: linear-gradient(135deg, #ff9a44 0%, #fc6076 100%); 
+            padding: 2px 14px; border-radius: 40px; position: absolute;
+            top: 48px; right: 25px; transform: rotate(-10deg); z-index: 2;
+        }
+        .logo-chimie {
+            font-size: 3.5rem !important; background: linear-gradient(135deg, #1f77b4 0%, #3498db 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; text-fill-color: transparent; margin-top: -5px; display: block;
+        }
         .logo-sub-dynamic { font-family: 'Roboto', sans-serif !important; font-size: 0.9rem !important; color: #95a5a6; text-transform: uppercase; letter-spacing: 5px; margin-top: 8px; font-weight: 400; }
-        [data-testid="stSidebarCollapseIcon"] { background-color: #fc6076 !important; color: white !important; border-radius: 50% !important; padding: 5px !important; animation: pulse-red 2s infinite; }
-        @keyframes pulse-red { 0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(252, 96, 118, 0.7); } 70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(252, 96, 118, 0); } 100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(252, 96, 118, 0); } }
+        
+        [data-testid="stSidebarCollapseIcon"] {
+            background-color: #fc6076 !important; color: white !important; border-radius: 50% !important; padding: 5px !important; animation: pulse-red 2s infinite;
+        }
+        @keyframes pulse-red {
+            0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(252, 96, 118, 0.7); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(252, 96, 118, 0); }
+            100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(252, 96, 118, 0); }
+        }
         .cpge-warning { font-size: 0.85rem; color: #666; font-style: italic; margin-top: -10px; }
         .stSlider [data-baseweb="slider"] div[role="presentation"] div { background-color: #fc6076 !important; }
         .stSlider [data-baseweb="slider"] div[role="slider"] { background-color: #fc6076 !important; border: 2px solid white !important; }
         div[data-testid="stThumbValue"] { color: #fc6076 !important; }
     </style>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
 # --- CONFIGURATION DONNÉES ---
 URL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsADsmsMnYgQXIUlU25_FlKrtTffM5XOL69taw9Pco8AHV4suIUtT0tg384XBtBAo28qGKGbtSJtIy/pub?gid=0&single=true&output=csv"
@@ -202,17 +237,19 @@ if st.session_state.resultats_recherche:
     st.success(f"✅ {nb} {label_sujet}")
 
     for idx, r in enumerate(st.session_state.resultats_recherche):
-        # On met un titre vide ici car le CSS va le masquer de toute façon
-        with st.expander(" "): 
-            
-            # C'est cette ligne qui deviendra l'unique titre visible
+        # On utilise une flèche ou un séparateur pour bien distinguer les deux parties
+        # Le gras de l'expander s'appliquera, mais la séparation sera nette
+        titre_header = f"📄 {r['nom']} ({r['annee']})  |  {r['stats']}"
+        
+        with st.expander(titre_header):
+            # Optionnel : On rappelle le titre avec le vrai style à l'intérieur
             st.markdown(f"""
-                <div class="custom-title-container">
-                    <span class="title-bold">📄 {r['nom']} ({r['annee']})</span>
-                    <span class="title-stats">• {r['stats']}</span>
+                <div style="margin-bottom: 15px;">
+                    <span style="color: #2c3e50; font-weight: 700; font-size: 1.1rem;">📄 {r['nom']} ({r['annee']})</span>
+                    <span style="color: #888; font-weight: 400; margin-left: 10px;">• {r['stats']}</span>
                 </div>
-                """, unsafe_allow_html=True)
-    
+            """, unsafe_allow_html=True)
+            # --- LOGIQUE DU LIEN ---
             nom_comparaison = r['nom'].lower()
             lien_sujet = None
             if "présélection icho" in nom_comparaison:
@@ -223,29 +260,22 @@ if st.session_state.resultats_recherche:
                 lien_sujet = "https://agregation-chimie.fr/index.php/les-epreuves-ecrites/annales-des-epreuves-ecrites"
             elif "capes" in nom_comparaison:
                 lien_sujet = "http://b.louchart.free.fr/Concours_et_examens/CAPES/CAPES_externe_Physique_Chimie/Sujets_et_corriges_ecrits.htmls"
-    
+
             if lien_sujet:
-                st.link_button("🔗 Consulter le sujet", lien_sujet, type="secondary")
-                st.write("") # Petit espace
+                st.link_button("📄 Lien vers le sujet", lien_sujet, type="secondary")
 
             # Fonction de surbrillance
             def highlight_rows(row):
                 for c in criteres:
                     try:
-                        i_min = NIVEAUX_ORDRE.index(c['diff_range'][0])
-                        i_max = NIVEAUX_ORDRE.index(c['diff_range'][1])
+                        i_min, i_max = NIVEAUX_ORDRE.index(c['diff_range'][0]), NIVEAUX_ORDRE.index(c['diff_range'][1])
                         n_acc = NIVEAUX_ORDRE[i_min : i_max + 1]
                     except: n_acc = NIVEAUX_ORDRE
-                    
                     if c['theme'].lower() in str(row['Thème']).lower() and str(row['Difficulté']).strip() in n_acc:
                         return ['background-color: #d1e7ff; color: black'] * len(row)
                 return [''] * len(row)
-    
-            st.dataframe(
-                r['questions'].style.apply(highlight_rows, axis=1), 
-                use_container_width=True, 
-                hide_index=True
-            )
+
+            st.dataframe(r['questions'].style.apply(highlight_rows, axis=1), use_container_width=True, hide_index=True)
 
 elif st.session_state.resultats_recherche == []:
     st.warning("Aucun résultat.")
