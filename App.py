@@ -72,7 +72,7 @@ st.markdown("""
             position: absolute;
             
             top: 48px; 
-            right: 65px; /* Décalage à gauche pour mordre sur le S */
+            right: 45px; /* Décalage à gauche pour mordre sur le S */
             
             transform: rotate(-10deg);
             z-index: 2;
