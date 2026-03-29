@@ -198,7 +198,11 @@ if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container
         
 # --- RÉSULTATS ET DÉTAILS ---
 if st.session_state.resultats_recherche:
-    st.success(f"✅ {len(st.session_state.resultats_recherche)} sujets trouvés")
+    # Gestion du singulier/pluriel
+    nb = len(st.session_state.resultats_recherche)
+    label_sujet = "sujet trouvé" if nb == 1 else "sujets trouvés"
+    
+    st.success(f"✅ {nb} {label_sujet}")
     df_res = pd.DataFrame([{"Sujet": r['nom'], "Année": r['annee'], "Questions ciblées": r['stats']} for r in st.session_state.resultats_recherche])
     st.dataframe(df_res, use_container_width=True, hide_index=True)
 
