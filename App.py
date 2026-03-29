@@ -17,7 +17,7 @@ st.markdown("""
             margin-bottom: 30px; font-family: 'Roboto', sans-serif; line-height: 1.5;
         }
         .logo-graphic-container {
-            text-align: center; margin-bottom: 45px; padding: 25px 40px 15px 40px; 
+            text-align: center; margin-bottom: 45px; padding: 25px 40px 5px 40px; 
             background: linear-gradient(165deg, rgba(255, 154, 68, 0.05) 0%, rgba(252, 96, 118, 0.08) 100%);
             border-radius: 50px 15px 70px 20px; display: inline-block;
             position: relative; left: 50%; transform: translateX(-50%);
@@ -91,8 +91,14 @@ def charger_donnees(url):
     except: return []
 
 # --- AFFICHAGE ---
-st.markdown('<div class="credits-compact"><b>Sylvain Betoule</b> • <b>Ulysse Garnier</b> • <b>Morgane Leite</b></div>', unsafe_allow_html=True)
-
+st.markdown("""
+<div class="credits-compact">
+    <span class="credits-qsn">Qui sommes-nous ?</span>
+    <b>Sylvain Betoule</b> (Doctorant, Sorbonne Univ.) • 
+    <b>Ulysse Garnier</b> (Doctorant, Sorbonne Univ.) • 
+    <b>Morgane Leite</b> (Resp. prépa agrégation de chimie, ENS)
+</div>
+""", unsafe_allow_html=True)
 st.markdown("""
     <div class="logo-graphic-container">
         <span class="logo-text-base logo-annales">Annales</span>
