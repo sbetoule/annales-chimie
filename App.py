@@ -175,12 +175,12 @@ if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container
     with st.spinner("Analyse de la base de données en cours..."):
         data = charger_donnees(URL_CSV)
         trouves = []
-
+        
         for s in data:
             q = s['questions']
             valid = True
             stats = []
-
+            
             # On crée une copie propre de la colonne Thème pour éviter les espaces ou majuscules parasites
             themes_sujet = q['Thème'].astype(str).str.strip().str.lower()
             difficultes_sujet = q['Difficulté'].astype(str).str.strip().str.lower()
@@ -188,7 +188,7 @@ if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container
             for c in criteres:
                 # Préparation du critère (nettoyage)
                 theme_recherche = str(c['theme']).strip().lower()
-
+                
                 # Récupération de la plage de difficulté
                 try:
                     idx_start = NIVEAUX_ORDRE.index(c['diff_range'][0])
@@ -201,10 +201,10 @@ if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container
                 # On vérifie si le thème recherché est contenu dans le texte de la cellule
                 mask_theme = themes_sujet.str.contains(theme_recherche, regex=False, na=False)
                 mask_diff = difficultes_sujet.isin(n_acc)
-
+                
                 count = len(q[mask_theme & mask_diff])
                 stats.append(f"{c['theme']} ({count})")
-
+                
                 # Si le nombre de questions pour ce thème est insuffisant, on rejette le sujet
                 if count < c['min']:
                     valid = False
@@ -213,11 +213,11 @@ if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container
             if valid:
                 s['stats'] = " | ".join(stats)
                 trouves.append(s)
-
+        
         # --- NOUVEAU SYSTÈME DE TRI ---
         trouves.sort(key=lambda x: x['nom'].lower()) # Tri alphabétique A-Z
         st.session_state.resultats_recherche = sorted(trouves, key=lambda x: x['annee'], reverse=True) # Tri année 2024-2000
-
+        
 # --- RÉSULTATS ET DÉTAILS ---
 if st.session_state.resultats_recherche:
     nb = len(st.session_state.resultats_recherche)
@@ -228,24 +228,23 @@ if st.session_state.resultats_recherche:
     for idx, r in enumerate(st.session_state.resultats_recherche):
         # Utilisation de colonnes très asymétriques pour gagner de la place
         c_text, c_btn = st.columns([0.85, 0.15])
-
+        
         with c_text:
             st.markdown(f"<p class='result-title'>{r['nom']} ({r['annee']})</p>", unsafe_allow_html=True)
             st.markdown(f"<p class='result-stats'>🎯 {r['stats']}</p>", unsafe_allow_html=True)
-            st.markdown(f"<p class='result-stats'>{r['stats']}</p>", unsafe_allow_html=True)
-
+        
         with c_btn:
             # Bouton "Détails" petit et sobre
             if st.button("Détails", key=f"btn_{idx}", use_container_width=True):
                 st.session_state.sujet_selectionne = r
-
+        
         st.markdown("<div style='margin: -10px 0px 5px 0px; border-bottom: 1px solid #f0f0f0;'></div>", unsafe_allow_html=True)
 
     # --- AFFICHAGE DES DÉTAILS ---
     if 'sujet_selectionne' in st.session_state:
         sujet = st.session_state.sujet_selectionne
         st.markdown(f"<p class='details-title'>🔍 Détails : {sujet['label']}</p>", unsafe_allow_html=True)
-
+        
         # --- LOGIQUE DU LIEN ---
         nom_comparaison = sujet['nom'].lower()
         lien_sujet = None
