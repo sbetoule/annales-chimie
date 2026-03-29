@@ -234,13 +234,6 @@ if st.session_state.resultats_recherche:
         titre_header = f"📄 {r['nom']} ({r['annee']})  |  {r['stats']}"
         
         with st.expander(titre_header):
-            # Optionnel : On rappelle le titre avec le vrai style à l'intérieur
-            st.markdown(f"""
-                <div style="margin-bottom: 15px;">
-                    <span style="color: #2c3e50; font-weight: 700; font-size: 1.1rem;">📄 {r['nom']} ({r['annee']})</span>
-                    <span style="color: #888; font-weight: 400; margin-left: 10px;">• {r['stats']}</span>
-                </div>
-            """, unsafe_allow_html=True)
             # --- LOGIQUE DU LIEN ---
             nom_comparaison = r['nom'].lower()
             lien_sujet = None
