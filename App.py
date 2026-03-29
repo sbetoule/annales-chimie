@@ -15,19 +15,7 @@ st.markdown("""
         header[data-testid="stHeader"] {
             display: none !important;
         }
-        
-      /* Style de base du texte dans l'expander */
-        .stExpander summary p {
-            font-size: 0.95rem !important;
-            color: #2c3e50; /* Couleur sombre pour le titre */
-        }
 
-        /* On retire la règle ::first-line qui causait le bug */
-        /* Optionnel : Enlever la bordure rouge de l'expander quand on clique dessus */
-        .stExpander:focus {
-            outline: none !important;
-            box-shadow: none !important;
-        }
         /* Ajustement de la marge pour que le texte "Qui sommes-nous" 
            ne soit pas trop collé au bord maintenant que le header est parti */
         .block-container {
@@ -187,12 +175,12 @@ if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container
     with st.spinner("Analyse de la base de données en cours..."):
         data = charger_donnees(URL_CSV)
         trouves = []
-        
+
         for s in data:
             q = s['questions']
             valid = True
             stats = []
-            
+
             # On crée une copie propre de la colonne Thème pour éviter les espaces ou majuscules parasites
             themes_sujet = q['Thème'].astype(str).str.strip().str.lower()
             difficultes_sujet = q['Difficulté'].astype(str).str.strip().str.lower()
@@ -200,7 +188,7 @@ if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container
             for c in criteres:
                 # Préparation du critère (nettoyage)
                 theme_recherche = str(c['theme']).strip().lower()
-                
+
                 # Récupération de la plage de difficulté
                 try:
                     idx_start = NIVEAUX_ORDRE.index(c['diff_range'][0])
@@ -213,10 +201,10 @@ if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container
                 # On vérifie si le thème recherché est contenu dans le texte de la cellule
                 mask_theme = themes_sujet.str.contains(theme_recherche, regex=False, na=False)
                 mask_diff = difficultes_sujet.isin(n_acc)
-                
+
                 count = len(q[mask_theme & mask_diff])
                 stats.append(f"{c['theme']} ({count})")
-                
+
                 # Si le nombre de questions pour ce thème est insuffisant, on rejette le sujet
                 if count < c['min']:
                     valid = False
@@ -225,57 +213,63 @@ if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container
             if valid:
                 s['stats'] = " | ".join(stats)
                 trouves.append(s)
-        
+
         # --- NOUVEAU SYSTÈME DE TRI ---
         trouves.sort(key=lambda x: x['nom'].lower()) # Tri alphabétique A-Z
         st.session_state.resultats_recherche = sorted(trouves, key=lambda x: x['annee'], reverse=True) # Tri année 2024-2000
-        
+
 # --- RÉSULTATS ET DÉTAILS ---
 if st.session_state.resultats_recherche:
     nb = len(st.session_state.resultats_recherche)
     label_sujet = "sujet trouvé" if nb == 1 else "sujets trouvés"
     st.success(f"✅ {nb} {label_sujet}")
 
+    # Conteneur pour limiter la hauteur si besoin (optionnel)
     for idx, r in enumerate(st.session_state.resultats_recherche):
-        # On utilise une flèche ou un séparateur pour bien distinguer les deux parties
-        # Le gras de l'expander s'appliquera, mais la séparation sera nette
-        titre_header = f"📄 {r['nom']} ({r['annee']})  |  {r['stats']}"
-        
-        with st.expander(titre_header):
-            # Optionnel : On rappelle le titre avec le vrai style à l'intérieur
-            st.markdown(f"""
-                <div style="margin-bottom: 15px;">
-                    <span style="color: #2c3e50; font-weight: 700; font-size: 1.1rem;">📄 {r['nom']} ({r['annee']})</span>
-                    <span style="color: #888; font-weight: 400; margin-left: 10px;">• {r['stats']}</span>
-                </div>
-            """, unsafe_allow_html=True)
-            # --- LOGIQUE DU LIEN ---
-            nom_comparaison = r['nom'].lower()
-            lien_sujet = None
-            if "présélection icho" in nom_comparaison:
-                lien_sujet = "https://www.sciencesalecole.org/olympiades-internationales-de-chimie-ressources/"
-            elif "agrégation externe spéciale" in nom_comparaison:
-                lien_sujet = "https://agregation-chimie.fr/index.php/composition-de-physique-chimie/annales-des-epreuves-ecrites"
-            elif "agrégation externe" in nom_comparaison:
-                lien_sujet = "https://agregation-chimie.fr/index.php/les-epreuves-ecrites/annales-des-epreuves-ecrites"
-            elif "capes" in nom_comparaison:
-                lien_sujet = "http://b.louchart.free.fr/Concours_et_examens/CAPES/CAPES_externe_Physique_Chimie/Sujets_et_corriges_ecrits.htmls"
+        # Utilisation de colonnes très asymétriques pour gagner de la place
+        c_text, c_btn = st.columns([0.85, 0.15])
 
-            if lien_sujet:
-                st.link_button("📄 Lien vers le sujet", lien_sujet, type="secondary")
+        with c_text:
+            st.markdown(f"<p class='result-title'>{r['nom']} ({r['annee']})</p>", unsafe_allow_html=True)
+            st.markdown(f"<p class='result-stats'>🎯 {r['stats']}</p>", unsafe_allow_html=True)
+            st.markdown(f"<p class='result-stats'>{r['stats']}</p>", unsafe_allow_html=True)
 
-            # Fonction de surbrillance
-            def highlight_rows(row):
-                for c in criteres:
-                    try:
-                        i_min, i_max = NIVEAUX_ORDRE.index(c['diff_range'][0]), NIVEAUX_ORDRE.index(c['diff_range'][1])
-                        n_acc = NIVEAUX_ORDRE[i_min : i_max + 1]
-                    except: n_acc = NIVEAUX_ORDRE
-                    if c['theme'].lower() in str(row['Thème']).lower() and str(row['Difficulté']).strip() in n_acc:
-                        return ['background-color: #d1e7ff; color: black'] * len(row)
-                return [''] * len(row)
+        with c_btn:
+            # Bouton "Détails" petit et sobre
+            if st.button("Détails", key=f"btn_{idx}", use_container_width=True):
+                st.session_state.sujet_selectionne = r
 
-            st.dataframe(r['questions'].style.apply(highlight_rows, axis=1), use_container_width=True, hide_index=True)
+        st.markdown("<div style='margin: -10px 0px 5px 0px; border-bottom: 1px solid #f0f0f0;'></div>", unsafe_allow_html=True)
 
+    # --- AFFICHAGE DES DÉTAILS ---
+    if 'sujet_selectionne' in st.session_state:
+        sujet = st.session_state.sujet_selectionne
+        st.markdown(f"<p class='details-title'>🔍 Détails : {sujet['label']}</p>", unsafe_allow_html=True)
+
+        # --- LOGIQUE DU LIEN ---
+        nom_comparaison = sujet['nom'].lower()
+        lien_sujet = None
+        if "présélection icho" in nom_comparaison:
+            lien_sujet = "https://www.sciencesalecole.org/olympiades-internationales-de-chimie-ressources/"
+        elif "agrégation externe" in nom_comparaison:
+            lien_sujet = "https://agregation-chimie.fr/index.php/les-epreuves-ecrites/annales-des-epreuves-ecrites"
+        # ... (Gardez vos autres conditions ici)
+
+        if lien_sujet:
+            # "secondary" pour le gris sobre, et texte corrigé
+            st.link_button("📄 Lien vers le sujet", lien_sujet, type="secondary")
+
+        # Table des questions (Style de surbrillance)
+        def highlight_rows(row):
+            for c in criteres:
+                try:
+                    i_min, i_max = NIVEAUX_ORDRE.index(c['diff_range'][0]), NIVEAUX_ORDRE.index(c['diff_range'][1])
+                    n_acc = NIVEAUX_ORDRE[i_min : i_max + 1]
+                except: n_acc = NIVEAUX_ORDRE
+                if c['theme'].lower() in str(row['Thème']).lower() and str(row['Difficulté']).strip() in n_acc:
+                    return ['background-color: #d1e7ff; color: black'] * len(row)
+            return [''] * len(row)
+
+        st.dataframe(sujet['questions'].style.apply(highlight_rows, axis=1), use_container_width=True, hide_index=True)
 elif st.session_state.resultats_recherche == []:
     st.warning("Aucun résultat.")
