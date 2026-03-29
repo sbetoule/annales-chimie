@@ -1,12 +1,32 @@
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="Annales Lab", layout="wide")
+st.set_page_config(page_title="Annales Lab Chimie", layout="wide")
 
-# --- STYLE CSS CORRIGÉ ---
+# --- STYLE CSS (Curseur + Logo + Tableaux) ---
 st.markdown("""
     <style>
-        /* La barre de progression (active) */
+        /* Styles du Logo */
+        .logo-container {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .logo-main {
+            font-size: 3.5rem !important;
+            font-weight: 800 !important;
+            color: #1f77b4;
+            margin-bottom: 0px;
+            letter-spacing: -1px;
+        }
+        .logo-sub {
+            font-size: 1.2rem !important;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: -10px;
+        }
+
+        /* La barre de progression du curseur (active) */
         .stSlider [data-baseweb="slider"] div[role="presentation"] div {
             background-color: #1f77b4 !important;
         }
@@ -28,7 +48,7 @@ st.markdown("""
             color: #1f77b4 !important;
             font-weight: bold !important;
         }
-        /* Supprimer les points/labels rouges automatiques de Streamlit */
+        /* Supprimer les points/labels rouges automatiques */
         .stSlider [data-baseweb="slider"] div div div {
              color: transparent !important;
         }
@@ -87,24 +107,30 @@ def charger_donnees(url):
 # --- BANDEAU DES CRÉDITS ---
 st.caption("*Qui sommes nous ?*")
 st.markdown("""
-<div style="font-size: 0.9rem; color: #555; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 20px;">
+<div style="font-size: 0.9rem; color: #555; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 25px;">
     <b>Sylvain Betoule</b> (Doctorant, Sorbonne Université) • 
     <b>Ulysse Garnier</b> (Doctorant, Sorbonne Université) • 
     <b>Morgane Leite</b> (Responsable de la préparation à l'agrégation de chimie, ENS)
 </div>
 """, unsafe_allow_html=True)
 
-st.title("🧪 Recherche d'Annales de Chimie")
+# --- LOGO ET SOUS-TITRE (LOGO TEXTUEL) ---
+st.markdown("""
+    <div class="logo-container">
+        <h1 class="logo-main">🧪 Annales Lab Chimie</h1>
+        <p class="logo-sub">Recherche d'annales de chimie</p>
+    </div>
+    """, unsafe_allow_html=True)
 
 # --- INSTRUCTIONS DE DÉPART ---
 with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
     c1, c2, c3 = st.columns(3)
     with c1:
         st.markdown("**1. Filtres**")
-        st.info("⬅️ Cliquez sur la flèche en haut à gauche (mobile) pour choisir vos thèmes.")
+        st.info("⬅️ Cliquez sur la flèche en haut à gauche pour choisir vos thèmes.")
     with c2:
         st.markdown("**2. Recherche**")
-        st.info("Cliquez sur le bouton rouge **🚀 Lancer la recherche** en bas.")
+        st.info("Cliquez sur le bouton bleu **🚀 Lancer la recherche** en bas.")
     with c3:
         st.markdown("**3. Analyse**")
         st.info("Sélectionnez un sujet en bas de la page : les questions ciblées apparaîtront en couleur.")
@@ -121,7 +147,6 @@ with st.sidebar:
         st.subheader(f"Filtre {n+1}")
         t = st.selectbox(f"Thème", THEMES_LISTE, key=f"t_{n}")
         
-        # Initialisation intelligente (insensible à la casse)
         niveaux_lower = [str(x).lower() for x in NIVEAUX_ORDRE]
         
         try:
