@@ -11,10 +11,15 @@ st.markdown("""
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@800;900&family=Permanent+Marker&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
+        /* Masquer complètement la barre d'outils Streamlit en haut */
+        header[data-testid="stHeader"] {
+            display: none !important;
+        }
+
+        /* Ajustement de la marge pour que le texte "Qui sommes-nous" 
+           ne soit pas trop collé au bord maintenant que le header est parti */
         .block-container {
-            /* On laisse 3rem pour que la ligne "Qui sommes-nous" respire */
-            padding-top: 3rem !important; 
-            padding-bottom: 0rem !important;
+            padding-top: 1.5rem !important;
         }
     
         .credits-compact {
