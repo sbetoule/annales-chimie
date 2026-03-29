@@ -61,7 +61,6 @@ st.markdown("""
             z-index: 1;
         }
 
-        /* "Lab" : Superposé sur le 'S' de Annales */
         .logo-lab-badged {
             font-family: 'Permanent Marker', cursive !important;
             font-size: 1.7rem !important;
@@ -70,10 +69,8 @@ st.markdown("""
             padding: 2px 14px;
             border-radius: 40px;
             position: absolute;
-            
             top: 48px; 
-            right: 25px; /* Décalage à gauche pour mordre sur le S */
-            
+            right: 25px; 
             transform: rotate(-10deg);
             z-index: 2;
             box-shadow: 0 4px 12px rgba(252, 96, 118, 0.35);
@@ -165,18 +162,44 @@ st.markdown("""
     </div>
     """, unsafe_allow_html=True)
 
-# --- CONTENU PRINCIPAL ---
+# --- CONTENU PRINCIPAL (Version Optimale Rétablie) ---
 with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
-    st.markdown("1. Ajustez vos **thèmes** et **difficultés** dans la barre latérale ⬅️  \n2. Cliquez sur **Lancer la recherche** \n3. Sélectionnez un sujet pour voir le détail des questions ciblées.")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.markdown("**1. Filtres**")
+        st.info("⬅️ Utilisez la barre latérale pour choisir vos thèmes.")
+    with c2:
+        st.markdown("**2. Recherche**")
+        st.info("Cliquez sur le bouton bleu **🚀 Lancer la recherche**.")
+    with c3:
+        st.markdown("**3. Analyse**")
+        st.info("Les questions ciblées apparaîtront en bleu dans les détails.")
+    
+    st.divider()
+    st.markdown("⚠️ *La liste des thématiques correspond au contenu des **programmes de CPGE**. Des niveaux de difficulté sont indiqués par rapport à un élève de CPGE. Ces derniers sont purement indicatifs et propres à l'interprétation des concepteurs de ce site.*")
 
 # Barre latérale
 with st.sidebar:
     st.header("⚙️ Filtres")
     criteres = []
+    
+    # Correction de l'initialisation Facile - Difficile
+    niveaux_lower = [n.lower().strip() for n in NIVEAUX_ORDRE]
+    try:
+        start_idx = niveaux_lower.index("facile")
+        end_idx = niveaux_lower.index("difficile")
+    except ValueError:
+        start_idx, end_idx = 0, len(NIVEAUX_ORDRE) - 1
+
     for n in range(st.session_state.nb_filtres):
         st.subheader(f"Filtre {n+1}")
         t = st.selectbox(f"Thème", THEMES_LISTE, key=f"t_{n}")
-        d_range = st.select_slider(f"Difficulté", options=NIVEAUX_ORDRE, value=(NIVEAUX_ORDRE[0], NIVEAUX_ORDRE[-1]), key=f"d_{n}")
+        d_range = st.select_slider(
+            f"Difficulté", 
+            options=NIVEAUX_ORDRE, 
+            value=(NIVEAUX_ORDRE[start_idx], NIVEAUX_ORDRE[end_idx]), 
+            key=f"d_{n}"
+        )
         m = st.number_input(f"Quantité min.", min_value=1, value=1, key=f"m_{n}")
         criteres.append({"theme": t, "diff_range": d_range, "min": m})
     
