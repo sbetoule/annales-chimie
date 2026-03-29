@@ -14,7 +14,7 @@ st.markdown("""
         .block-container {
             padding-top: 1rem !important;
             padding-bottom: 0rem !important;
-            margin-top: -20px; /* Optionnel : pour remonter encore plus */
+            margin-top: -10px; /* Optionnel : pour remonter encore plus */
         }
     
         .credits-compact {
