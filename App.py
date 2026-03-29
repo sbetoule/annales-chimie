@@ -11,6 +11,12 @@ st.markdown("""
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@800;900&family=Permanent+Marker&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
+        .block-container {
+            padding-top: 1rem !important;
+            padding-bottom: 0rem !important;
+            margin-top: -20px; /* Optionnel : pour remonter encore plus */
+        }
+    
         .credits-compact {
             font-size: 0.85rem; color: #555; text-align: center;
             border-bottom: 1px solid #eee; padding-bottom: 10px;
