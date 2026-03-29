@@ -15,7 +15,23 @@ st.markdown("""
         header[data-testid="stHeader"] {
             display: none !important;
         }
+        /* Style du texte à l'intérieur de la barre de l'expander */
+        .stExpander summary p {
+            font-size: 0.95rem !important;
+            color: #888; /* Couleur grise par défaut pour tout le titre */
+        }
+        
+        /* On force le début du texte (le nom du sujet) en noir et gras */
+        .stExpander summary p::first-line {
+            color: #2c3e50 !important;
+            font-weight: 700 !important;
+        }
 
+        /* Optionnel : Enlever la bordure rouge de l'expander quand on clique dessus */
+        .stExpander:focus {
+            outline: none !important;
+            box-shadow: none !important;
+        }
         /* Ajustement de la marge pour que le texte "Qui sommes-nous" 
            ne soit pas trop collé au bord maintenant que le header est parti */
         .block-container {
@@ -225,10 +241,11 @@ if st.session_state.resultats_recherche:
     st.success(f"✅ {nb} {label_sujet}")
 
     for idx, r in enumerate(st.session_state.resultats_recherche):
-        # Chaque sujet devient un accordéon cliquable
-        # On affiche le titre et les stats directement dans la barre de l'expander
-        with st.expander(f"📄 {r['nom']} ({r['annee']}) — {r['stats']}"):
-            
+        # On formate le titre de l'expander : 
+        # Le nom est en gras, les thèmes sont après un point médian, en texte normal
+        titre_header = f"📄 {r['nom']} ({r['annee']})  •  {r['stats']}"
+        
+        with st.expander(titre_header):
             # --- LOGIQUE DU LIEN ---
             nom_comparaison = r['nom'].lower()
             lien_sujet = None
@@ -244,7 +261,7 @@ if st.session_state.resultats_recherche:
             if lien_sujet:
                 st.link_button("📄 Lien vers le sujet", lien_sujet, type="secondary")
 
-            # Fonction de surbrillance locale au sujet
+            # Fonction de surbrillance
             def highlight_rows(row):
                 for c in criteres:
                     try:
@@ -255,7 +272,6 @@ if st.session_state.resultats_recherche:
                         return ['background-color: #d1e7ff; color: black'] * len(row)
                 return [''] * len(row)
 
-            # Affichage du tableau spécifique à ce sujet
             st.dataframe(r['questions'].style.apply(highlight_rows, axis=1), use_container_width=True, hide_index=True)
 
 elif st.session_state.resultats_recherche == []:
