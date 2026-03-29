@@ -21,7 +21,28 @@ st.markdown("""
         .block-container {
             padding-top: 1.5rem !important;
         }
-    
+        /* Titres des résultats plus petits et serrés */
+        .result-title {
+            font-size: 1.1rem !important;
+            font-weight: 700;
+            margin-bottom: -5px !important;
+        }
+        /* Stats (sous-titre) plus discrètes */
+        .result-stats {
+            font-size: 0.85rem !important;
+            color: #666;
+            margin-bottom: 0px !important;
+        }
+        /* Titre de la section Détails */
+        .details-title {
+            font-size: 1.2rem !important;
+            margin-top: 20px !important;
+            color: #2c3e50;
+        }
+        /* Réduire l'espace des colonnes Streamlit */
+        [data-testid="column"] {
+            padding: 0px !important;
+        }
         .credits-compact {
             font-size: 0.85rem; color: #555; text-align: center;
             border-bottom: 1px solid #eee; padding-bottom: 10px;
@@ -125,7 +146,7 @@ with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
     with c1:
         st.markdown("**1. Filtres**"); st.info("⬅️ Utilisez la barre latérale pour choisir vos thèmes.")
     with c2:
-        st.markdown("**2. Recherche**"); st.info("Cliquez sur le bouton 🚀 **Lancer la recherche**.")
+        st.markdown("**2. Recherche**"); st.info("Cliquez sur le bouton 🔎 **Lancer la recherche**.")
     with c3:
         st.markdown("**3. Analyse**"); st.info("⬇️ Les questions ciblées apparaîtront en bleu dans les détails.")
     st.markdown("<p class='cpge-warning'>⚠️ La liste des thématiques correspond au contenu des programmes de CPGE. Des niveaux de difficulté sont indiqués par rapport à un élève de CPGE. Ces derniers sont purement indicatifs et propres à l'interprétation des concepteurs de ce site.</p>", unsafe_allow_html=True)
@@ -148,17 +169,18 @@ with st.sidebar:
     col1, col2 = st.columns(2)
     if col1.button("➕ Ajouter"): st.session_state.nb_filtres += 1; st.rerun()
     if col2.button("🗑️ Effacer") and st.session_state.nb_filtres > 1: st.session_state.nb_filtres -= 1; st.rerun()
-
-if st.button("🚀 Lancer la recherche d'annales", type="primary", use_container_width=True):
+if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container_width=True):
+    if 'sujet_selectionne' in st.session_state:
+        del st.session_state.sujet_selectionne
     with st.spinner("Analyse de la base de données en cours..."):
         data = charger_donnees(URL_CSV)
         trouves = []
-        
+
         for s in data:
             q = s['questions']
             valid = True
             stats = []
-            
+
             # On crée une copie propre de la colonne Thème pour éviter les espaces ou majuscules parasites
             themes_sujet = q['Thème'].astype(str).str.strip().str.lower()
             difficultes_sujet = q['Difficulté'].astype(str).str.strip().str.lower()
@@ -166,7 +188,7 @@ if st.button("🚀 Lancer la recherche d'annales", type="primary", use_container
             for c in criteres:
                 # Préparation du critère (nettoyage)
                 theme_recherche = str(c['theme']).strip().lower()
-                
+
                 # Récupération de la plage de difficulté
                 try:
                     idx_start = NIVEAUX_ORDRE.index(c['diff_range'][0])
@@ -179,10 +201,10 @@ if st.button("🚀 Lancer la recherche d'annales", type="primary", use_container
                 # On vérifie si le thème recherché est contenu dans le texte de la cellule
                 mask_theme = themes_sujet.str.contains(theme_recherche, regex=False, na=False)
                 mask_diff = difficultes_sujet.isin(n_acc)
-                
+
                 count = len(q[mask_theme & mask_diff])
                 stats.append(f"{c['theme']} ({count})")
-                
+
                 # Si le nombre de questions pour ce thème est insuffisant, on rejette le sujet
                 if count < c['min']:
                     valid = False
@@ -191,46 +213,63 @@ if st.button("🚀 Lancer la recherche d'annales", type="primary", use_container
             if valid:
                 s['stats'] = " | ".join(stats)
                 trouves.append(s)
-        
+
         # --- NOUVEAU SYSTÈME DE TRI ---
         trouves.sort(key=lambda x: x['nom'].lower()) # Tri alphabétique A-Z
         st.session_state.resultats_recherche = sorted(trouves, key=lambda x: x['annee'], reverse=True) # Tri année 2024-2000
-        
+
 # --- RÉSULTATS ET DÉTAILS ---
 if st.session_state.resultats_recherche:
-    st.success(f"✅ {len(st.session_state.resultats_recherche)} sujets trouvés")
-    df_res = pd.DataFrame([{"Sujet": r['nom'], "Année": r['annee'], "Questions ciblées": r['stats']} for r in st.session_state.resultats_recherche])
-    st.dataframe(df_res, use_container_width=True, hide_index=True)
+    nb = len(st.session_state.resultats_recherche)
+    label_sujet = "sujet trouvé" if nb == 1 else "sujets trouvés"
+    st.success(f"✅ {nb} {label_sujet}")
 
-    st.divider()
-    choix = st.selectbox("🔍 Détails du sujet :", [r['label'] for r in st.session_state.resultats_recherche])
-    sujet = next(r for r in st.session_state.resultats_recherche if r['label'] == choix)
+    # Conteneur pour limiter la hauteur si besoin (optionnel)
+    for idx, r in enumerate(st.session_state.resultats_recherche):
+        # Utilisation de colonnes très asymétriques pour gagner de la place
+        c_text, c_btn = st.columns([0.85, 0.15])
 
-    # --- LOGIQUE DU BOUTON DE LIEN ---
-    lien_sujet = None
-    nom_comparaison = sujet['nom'].lower()
+        with c_text:
+            st.markdown(f"<p class='result-title'>{r['nom']} ({r['annee']})</p>", unsafe_allow_html=True)
+            st.markdown(f"<p class='result-stats'>🎯 {r['stats']}</p>", unsafe_allow_html=True)
+            st.markdown(f"<p class='result-stats'>{r['stats']}</p>", unsafe_allow_html=True)
 
-    if "présélection icho" in nom_comparaison:
-        lien_sujet = "https://www.sciencesalecole.org/olympiades-internationales-de-chimie-ressources/"
-    elif "agrégation externe spéciale" in nom_comparaison:
-        lien_sujet = "https://agregation-chimie.fr/index.php/composition-de-physique-chimie/annales-des-epreuves-ecrites"
-    elif "agrégation externe" in nom_comparaison:
-        lien_sujet = "https://agregation-chimie.fr/index.php/les-epreuves-ecrites/annales-des-epreuves-ecrites"
-    elif "capes" in nom_comparaison:
-        lien_sujet = "http://b.louchart.free.fr/Concours_et_examens/CAPES/CAPES_externe_Physique_Chimie/Sujets_et_corriges_ecrits.htmls"
+        with c_btn:
+            # Bouton "Détails" petit et sobre
+            if st.button("Détails", key=f"btn_{idx}", use_container_width=True):
+                st.session_state.sujet_selectionne = r
 
-    if lien_sujet:
-        # Bouton sobre (secondary) et largeur réduite (pas de use_container_width)
-        st.link_button("📄 Lien vers le sujet", lien_sujet, type="secondary")
+        st.markdown("<div style='margin: -10px 0px 5px 0px; border-bottom: 1px solid #f0f0f0;'></div>", unsafe_allow_html=True)
 
-    def highlight_rows(row):
-        for c in criteres:
-            i_min, i_max = NIVEAUX_ORDRE.index(c['diff_range'][0]), NIVEAUX_ORDRE.index(c['diff_range'][1])
-            n_acc = NIVEAUX_ORDRE[i_min : i_max + 1]
-            if c['theme'].lower() in str(row['Thème']).lower() and str(row['Difficulté']).strip() in n_acc:
-                return ['background-color: #d1e7ff; color: black'] * len(row)
-        return [''] * len(row)
+    # --- AFFICHAGE DES DÉTAILS ---
+    if 'sujet_selectionne' in st.session_state:
+        sujet = st.session_state.sujet_selectionne
+        st.markdown(f"<p class='details-title'>🔍 Détails : {sujet['label']}</p>", unsafe_allow_html=True)
 
-    st.dataframe(sujet['questions'].style.apply(highlight_rows, axis=1), use_container_width=True, hide_index=True)
+        # --- LOGIQUE DU LIEN ---
+        nom_comparaison = sujet['nom'].lower()
+        lien_sujet = None
+        if "présélection icho" in nom_comparaison:
+            lien_sujet = "https://www.sciencesalecole.org/olympiades-internationales-de-chimie-ressources/"
+        elif "agrégation externe" in nom_comparaison:
+            lien_sujet = "https://agregation-chimie.fr/index.php/les-epreuves-ecrites/annales-des-epreuves-ecrites"
+        # ... (Gardez vos autres conditions ici)
+
+        if lien_sujet:
+            # "secondary" pour le gris sobre, et texte corrigé
+            st.link_button("📄 Lien vers le sujet", lien_sujet, type="secondary")
+
+        # Table des questions (Style de surbrillance)
+        def highlight_rows(row):
+            for c in criteres:
+                try:
+                    i_min, i_max = NIVEAUX_ORDRE.index(c['diff_range'][0]), NIVEAUX_ORDRE.index(c['diff_range'][1])
+                    n_acc = NIVEAUX_ORDRE[i_min : i_max + 1]
+                except: n_acc = NIVEAUX_ORDRE
+                if c['theme'].lower() in str(row['Thème']).lower() and str(row['Difficulté']).strip() in n_acc:
+                    return ['background-color: #d1e7ff; color: black'] * len(row)
+            return [''] * len(row)
+
+        st.dataframe(sujet['questions'].style.apply(highlight_rows, axis=1), use_container_width=True, hide_index=True)
 elif st.session_state.resultats_recherche == []:
     st.warning("Aucun résultat.")
