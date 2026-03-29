@@ -170,7 +170,7 @@ if st.session_state.resultats_recherche:
         lien_sujet = "https://agregation-chimie.fr/index.php/composition-de-physique-chimie/annales-des-epreuves-ecrites"
     elif "agrégation externe" in nom_comparaison:
         lien_sujet = "https://agregation-chimie.fr/index.php/les-epreuves-ecrites/annales-des-epreuves-ecrites"
-    elif "CAPES" in nom_comparaison:
+    elif "capes" in nom_comparaison:
         lien_sujet = "http://b.louchart.free.fr/Concours_et_examens/CAPES/CAPES_externe_Physique_Chimie/Sujets_et_corriges_ecrits.htmls"
 
     if lien_sujet:
