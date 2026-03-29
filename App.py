@@ -13,18 +13,46 @@ st.markdown("""
     <style>
         header[data-testid="stHeader"] { display: none !important; }
         
-       /* Style pour le titre externe (simule l'en-tête de l'expander) */
+       /* Style pour le titre externe */
         .custom-header {
             background-color: #ffffff;
             border: 1px solid #e6e9ef;
-            border-radius: 8px 8px 0 0; /* Arrondi seulement en haut */
-            padding: 10px 15px;
+            border-radius: 8px 8px 0 0;
+            padding: 12px 15px;
             margin-bottom: -47px; 
             position: relative;
             z-index: 10;
             display: flex;
             align-items: center;
-            pointer-events: none;
+            pointer-events: none; /* Laisse le clic traverser vers l'expander */
+            transition: all 0.2s ease; /* Animation fluide */
+        }
+        /* On force le curseur sur l'expander pour que l'utilisateur sache qu'il peut cliquer */
+        .stExpander {
+            cursor: pointer;
+            border: 1px solid #e6e9ef !important;
+            border-radius: 0 0 8px 8px !important;
+            border-top: none !important;
+            transition: all 0.2s ease;
+        }
+        
+        /* Effet visuel quand on survole l'expander parent */
+        .stExpander:hover + .custom-header, 
+        .stExpander:hover {
+            border-color: #fc6076 !important;
+        }
+
+        /* Animation de la flèche */
+        .arrow-icon {
+            color: #fc6076;
+            margin-right: 12px;
+            font-size: 0.9rem;
+            transition: transform 0.2s ease;
+        }
+
+        /* On simule un changement de couleur au survol global de la zone */
+        .stExpander:hover .custom-header {
+            background-color: #fffafb;
         }
         
         /* Cache les éléments natifs de l'expander */
@@ -209,21 +237,20 @@ if st.session_state.resultats_recherche:
     st.success(f"✅ {nb} {'sujet trouvé' if nb == 1 else 'sujets trouvés'}")
 
     for idx, r in enumerate(st.session_state.resultats_recherche):
-        # 1. En-tête personnalisé avec flèche "intuitive"
+        # En-tête avec chevron dynamique
         st.markdown(f"""
             <div class="custom-header">
-                <span style="color: #fc6076; margin-right: 12px; font-size: 0.7rem;">▶</span>
+                <span class="arrow-icon">❯</span>
                 <span class="title-bold">📄 {r['nom']} ({r['annee']})</span>
                 <span class="title-stats">• {r['stats']}</span>
             </div>
             """, unsafe_allow_html=True)
         
-        # 2. L'expander (le titre est remplacé par un espace pour laisser place au custom-header)
         with st.expander(" "):
-            # Petit espace pour ne pas coller le contenu au haut du cadre
-            st.markdown("<div style='margin-top:20px;'></div>", unsafe_allow_html=True)
+            # Un seul espace suffit
+            st.markdown("<div style='margin-top:25px;'></div>", unsafe_allow_html=True)
             
-            # Liens externes
+            # Liens
             nom_comp = r['nom'].lower()
             liens = {
                 "présélection icho": "https://www.sciencesalecole.org/olympiades-internationales-de-chimie-ressources/",
@@ -232,12 +259,11 @@ if st.session_state.resultats_recherche:
                 "capes": "http://b.louchart.free.fr/Concours_et_examens/CAPES/CAPES_externe_Physique_Chimie/Sujets_et_corriges_ecrits.html"
             }
             
-            for key, url in liens.items():
-                if key in nom_comp:
-                    st.link_button("🔗 Consulter le sujet complet", url, type="secondary")
-                    break
+            target_link = next((url for key, url in liens.items() if key in nom_comp), None)
+            if target_link:
+                st.link_button("🔗 Consulter le sujet complet", target_link, type="secondary")
             
-            # Fonction de surbrillance des lignes
+            # Tableau avec surbrillance
             def apply_highlight(row):
                 highlight = False
                 for c in criteres:
