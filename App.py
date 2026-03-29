@@ -4,107 +4,14 @@ import pandas as pd
 # Configuration de la page
 st.set_page_config(page_title="Annales Lab Chimie", layout="wide")
 
-# --- STYLE CSS (LOGO, CRÉDITS, ANIMATION MOBILE) ---
-st.markdown("""
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@800;900&family=Permanent+Marker&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    
-    <style>
-        /* Masquer complètement la barre d'outils Streamlit en haut */
-        header[data-testid="stHeader"] {
-            display: none !important;
-        }
-        
-      /* Style de base du texte dans l'expander */
-        .stExpander summary p {
-            font-size: 0.95rem !important;
-            color: #2c3e50; /* Couleur sombre pour le titre */
-        }
-
-        /* On retire la règle ::first-line qui causait le bug */
-        /* Optionnel : Enlever la bordure rouge de l'expander quand on clique dessus */
-        .stExpander:focus {
-            outline: none !important;
-            box-shadow: none !important;
-        }
-        /* Ajustement de la marge pour que le texte "Qui sommes-nous" 
-           ne soit pas trop collé au bord maintenant que le header est parti */
-        .block-container {
-            padding-top: 1.5rem !important;
-        }
-        /* Titres des résultats plus petits et serrés */
-        .result-title {
-            font-size: 1.1rem !important;
-            font-weight: 700;
-            margin-bottom: -5px !important;
-        }
-        /* Stats (sous-titre) plus discrètes */
-        .result-stats {
-            font-size: 0.85rem !important;
-            color: #666;
-            margin-bottom: 0px !important;
-        }
-        /* Titre de la section Détails */
-        .details-title {
-            font-size: 1.2rem !important;
-            margin-top: 20px !important;
-            color: #2c3e50;
-        }
-        /* Réduire l'espace des colonnes Streamlit */
-        [data-testid="column"] {
-            padding: 0px !important;
-        }
-        .credits-compact {
-            font-size: 0.85rem; color: #555; text-align: center;
-            border-bottom: 1px solid #eee; padding-bottom: 10px;
-            margin-bottom: 30px; font-family: 'Roboto', sans-serif; line-height: 1.5;
-        }
-        .logo-graphic-container {
-            text-align: center; margin-bottom: 45px; padding: 25px 40px 5px 40px; 
-            background: linear-gradient(165deg, rgba(255, 154, 68, 0.05) 0%, rgba(252, 96, 118, 0.08) 100%);
-            border-radius: 50px 15px 70px 20px; display: inline-block;
-            position: relative; left: 50%; transform: translateX(-50%);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.02);
-        }
-        .logo-text-base { font-family: 'Poppins', sans-serif !important; font-weight: 900 !important; text-transform: uppercase; letter-spacing: -2px; line-height: 0.85; margin: 0; display: inline-block; }
-        .logo-annales { font-size: 4rem !important; color: #2c3e50; position: relative; z-index: 1; }
-        .logo-lab-badged {
-            font-family: 'Permanent Marker', cursive !important; font-size: 1.7rem !important;
-            color: #ffffff; background: linear-gradient(135deg, #ff9a44 0%, #fc6076 100%); 
-            padding: 2px 14px; border-radius: 40px; position: absolute;
-            top: 48px; right: 25px; transform: rotate(-10deg); z-index: 2;
-        }
-        .logo-chimie {
-            font-size: 3.5rem !important; background: linear-gradient(135deg, #1f77b4 0%, #3498db 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            background-clip: text; text-fill-color: transparent; margin-top: -5px; display: block;
-        }
-        .logo-sub-dynamic { font-family: 'Roboto', sans-serif !important; font-size: 0.9rem !important; color: #95a5a6; text-transform: uppercase; letter-spacing: 5px; margin-top: 8px; font-weight: 400; }
-        
-        [data-testid="stSidebarCollapseIcon"] {
-            background-color: #fc6076 !important; color: white !important; border-radius: 50% !important; padding: 5px !important; animation: pulse-red 2s infinite;
-        }
-        @keyframes pulse-red {
-            0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(252, 96, 118, 0.7); }
-            70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(252, 96, 118, 0); }
-            100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(252, 96, 118, 0); }
-        }
-        .cpge-warning { font-size: 0.85rem; color: #666; font-style: italic; margin-top: -10px; }
-        .stSlider [data-baseweb="slider"] div[role="presentation"] div { background-color: #fc6076 !important; }
-        .stSlider [data-baseweb="slider"] div[role="slider"] { background-color: #fc6076 !important; border: 2px solid white !important; }
-        div[data-testid="stThumbValue"] { color: #fc6076 !important; }
-    </style>
-    """, unsafe_allow_html=True)
+# --- TEST DE SURVIE (SCÉNARIO B) ---
+st.write("### Diagnostic : Si vous voyez ce message, le script fonctionne.")
+st.sidebar.success("La sidebar est active !")
 
 # --- CONFIGURATION DONNÉES ---
 URL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsADsmsMnYgQXIUlU25_FlKrtTffM5XOL69taw9Pco8AHV4suIUtT0tg384XBtBAo28qGKGbtSJtIy/pub?gid=0&single=true&output=csv"
 URL_THEMES = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsADsmsMnYgQXIUlU25_FlKrtTffM5XOL69taw9Pco8AHV4suIUtT0tg384XBtBAo28qGKGbtSJtIy/pub?gid=1733310474&single=true&output=csv"
 URL_NIVEAUX = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsADsmsMnYgQXIUlU25_FlKrtTffM5XOL69taw9Pco8AHV4suIUtT0tg384XBtBAo28qGKGbtSJtIy/pub?gid=1879771001&single=true&output=csv"
-
-# --- TEST DE SURVIE ---
-st.sidebar.warning("Le script est arrivé jusqu'ici") # Si vous voyez ça, la sidebar marche
-
 @st.cache_data(ttl=60)
 def recuperer_listes(url_themes, url_niveaux):
     try:
@@ -113,14 +20,10 @@ def recuperer_listes(url_themes, url_niveaux):
         df_n = pd.read_csv(url_niveaux, header=None)
         niveaux = df_n.iloc[0].dropna().astype(str).tolist()
         return themes, niveaux
-    except Exception as e:
-        # On affiche l'erreur réelle dans la sidebar
-        st.sidebar.error(f"Erreur de lecture CSV : {e}")
-        return ["Erreur de chargement"], ["facile", "moyen", "difficile"]
+    except: return ["Erreur"], ["facile", "moyen", "difficile"]
 
-# On n'utilise pas le spinner pour le test, on appelle direct
-THEMES_LISTE, NIVEAUX_ORDRE = recuperer_listes(URL_THEMES, URL_NIVEAUX)
-st.sidebar.success(f"Thèmes chargés : {len(THEMES_LISTE)}")
+with st.spinner("Initialisation des thématiques..."):
+    THEMES_LISTE, NIVEAUX_ORDRE = recuperer_listes(URL_THEMES, URL_NIVEAUX)
 
 if 'resultats_recherche' not in st.session_state: st.session_state.resultats_recherche = None
 if 'nb_filtres' not in st.session_state: st.session_state.nb_filtres = 1
