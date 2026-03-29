@@ -3,27 +3,45 @@ import pandas as pd
 
 st.set_page_config(page_title="Annales Lab Chimie", layout="wide")
 
-# --- STYLE CSS (Curseur + Logo + Tableaux) ---
+# --- STYLE CSS (LOGO GRAPHIQUE + Curseur + Tableaux) ---
 st.markdown("""
     <style>
-        /* Styles du Logo */
+        /* Styles du Logo Graphique */
         .logo-container {
             text-align: center;
-            margin-bottom: 25px;
+            margin-top: 10px;
+            margin-bottom: 30px;
+            padding: 10px;
         }
         .logo-main {
-            font-size: 3.5rem !important;
-            font-weight: 800 !important;
-            color: #1f77b4;
+            /* Police moderne et grasse */
+            font-family: 'Montserrat', 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
+            font-size: 4rem !important;
+            font-weight: 900 !important;
+            
+            /* Effet de dégradé métallique bleu */
+            background: linear-gradient(135deg, #1f77b4 0%, #6ab0de 50%, #1f77b4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-fill-color: transparent;
+            
+            /* Effet d'ombre 3D pour le volume */
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.15), 
+                         0px 0px 1px rgba(31, 119, 180, 0.5);
+            
             margin-bottom: 0px;
-            letter-spacing: -1px;
+            letter-spacing: -2px; /* Rapproche les lettres pour un effet bloc */
+            display: inline-block; /* Nécessaire pour le dégradé */
         }
         .logo-sub {
-            font-size: 1.2rem !important;
-            color: #555;
+            font-family: 'Roboto', sans-serif !important;
+            font-size: 1.1rem !important;
+            color: #666;
             text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-top: -10px;
+            letter-spacing: 4px; /* Espace les lettres pour le contraste */
+            margin-top: -5px;
+            font-weight: 400;
         }
 
         /* La barre de progression du curseur (active) */
@@ -114,10 +132,10 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# --- LOGO ET SOUS-TITRE (LOGO TEXTUEL) ---
+# --- LOGO GRAPHIQUE ET SOUS-TITRE ---
 st.markdown("""
     <div class="logo-container">
-        <h1 class="logo-main">🧪 Annales Lab Chimie</h1>
+        <h1 class="logo-main">Annales Lab Chimie</h1>
         <p class="logo-sub">Recherche d'annales de chimie</p>
     </div>
     """, unsafe_allow_html=True)
