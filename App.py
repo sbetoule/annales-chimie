@@ -13,41 +13,32 @@ st.markdown("""
     <style>
         header[data-testid="stHeader"] { display: none !important; }
         
-        /* Style pour le titre externe (qui simule le titre de l'expander) */
+       /* Style pour le titre externe (simule l'en-tête de l'expander) */
         .custom-header {
             background-color: #ffffff;
             border: 1px solid #e6e9ef;
             border-radius: 8px 8px 0 0; /* Arrondi seulement en haut */
             padding: 10px 15px;
-            margin-bottom: -44px; /* "Avale" l'expander pour le coller */
+            margin-bottom: -47px; 
             position: relative;
             z-index: 10;
             display: flex;
             align-items: center;
-            pointer-events: none; /* Laisse le clic passer à l'expander en dessous */
+            pointer-events: none;
         }
         
-        /* On cache le titre natif de l'expander et on ajuste sa forme */
+        /* Cache les éléments natifs de l'expander */
+        .stExpander summary { border: none !important; }
+        .stExpander summary span[data-testid="stWidgetLabel"], 
+        .stExpander summary svg { display: none !important; }
+        
+        /* Cadre de l'expander */
         .stExpander {
+            border: 1px solid #e6e9ef !important;
             border-radius: 0 0 8px 8px !important; /* Arrondi seulement en bas */
-        }
-        .stExpander summary p {
-            visibility: hidden !important; /* Cache le texte mais garde l'espace pour la flèche */
+            border-top: none !important; /* Supprime la ligne de séparation pour fusionner avec le titre */
         }
         
-        /* Supprime le padding inutile en haut de l'intérieur de l'expander */
-        .stExpander [data-testid="stExpanderDetails"] {
-            padding-top: 1rem !important;
-        }
-        
-        /* Ajustement du container de titre personnalisé */
-        .custom-title-container {
-            margin-top: -35px; /* On remonte le titre pour combler le vide laissé par le titre masqué */
-            margin-bottom: 20px;
-            font-size: 1rem;
-            border-bottom: 1px solid #f0f2f6;
-            padding-bottom: 10px;
-        }
         .title-bold {
             color: #2c3e50;
             font-weight: 700;
@@ -215,41 +206,40 @@ if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container
 # --- RÉSULTATS ET DÉTAILS ---
 if st.session_state.resultats_recherche:
     nb = len(st.session_state.resultats_recherche)
-    label_sujet = "sujet trouvé" if nb == 1 else "sujets trouvés"
-    st.success(f"✅ {nb} {label_sujet}")
+    st.success(f"✅ {nb} {'sujet trouvé' if nb == 1 else 'sujets trouvés'}")
 
     for idx, r in enumerate(st.session_state.resultats_recherche):
-        # 1. Titre personnalisé (visible tout le temps)
+        # 1. En-tête personnalisé avec flèche "intuitive"
         st.markdown(f"""
             <div class="custom-header">
-                <span style="margin-right:25px;"></span> 
+                <span style="color: #fc6076; margin-right: 12px; font-size: 0.7rem;">▶</span>
                 <span class="title-bold">📄 {r['nom']} ({r['annee']})</span>
                 <span class="title-stats">• {r['stats']}</span>
             </div>
             """, unsafe_allow_html=True)
         
-        # 2. L'expander (la flèche sera à gauche du titre ci-dessus)
+        # 2. L'expander (le titre est remplacé par un espace pour laisser place au custom-header)
         with st.expander(" "):
-            # --- LOGIQUE INTERNE (On définit tout AVANT d'afficher) ---
+            # Petit espace pour ne pas coller le contenu au haut du cadre
+            st.markdown("<div style='margin-top:20px;'></div>", unsafe_allow_html=True)
             
-            # Gestion des liens
-            nom_comparaison = r['nom'].lower()
-            lien_sujet = None
-            if "présélection icho" in nom_comparaison:
-                lien_sujet = "https://www.sciencesalecole.org/olympiades-internationales-de-chimie-ressources/"
-            elif "agrégation externe spéciale" in nom_comparaison:
-                lien_sujet = "https://agregation-chimie.fr/index.php/composition-de-physique-chimie/annales-des-epreuves-ecrites"
-            elif "agrégation externe" in nom_comparaison:
-                lien_sujet = "https://agregation-chimie.fr/index.php/les-epreuves-ecrites/annales-des-epreuves-ecrites"
-            elif "capes" in nom_comparaison:
-                lien_sujet = "http://b.louchart.free.fr/Concours_et_examens/CAPES/CAPES_externe_Physique_Chimie/Sujets_et_corriges_ecrits.htmls"
+            # Liens externes
+            nom_comp = r['nom'].lower()
+            liens = {
+                "présélection icho": "https://www.sciencesalecole.org/olympiades-internationales-de-chimie-ressources/",
+                "agrégation externe spéciale": "https://agregation-chimie.fr/index.php/composition-de-physique-chimie/annales-des-epreuves-ecrites",
+                "agrégation externe": "https://agregation-chimie.fr/index.php/les-epreuves-ecrites/annales-des-epreuves-ecrites",
+                "capes": "http://b.louchart.free.fr/Concours_et_examens/CAPES/CAPES_externe_Physique_Chimie/Sujets_et_corriges_ecrits.html"
+            }
             
-            if lien_sujet:
-                st.link_button("🔗 Consulter le sujet", lien_sujet, type="secondary")
-                st.write("") 
-
-            # Fonction de surbrillance
-            def highlight_rows(row):
+            for key, url in liens.items():
+                if key in nom_comp:
+                    st.link_button("🔗 Consulter le sujet complet", url, type="secondary")
+                    break
+            
+            # Fonction de surbrillance des lignes
+            def apply_highlight(row):
+                highlight = False
                 for c in criteres:
                     try:
                         i_min = NIVEAUX_ORDRE.index(c['diff_range'][0])
@@ -257,13 +247,14 @@ if st.session_state.resultats_recherche:
                         n_acc = NIVEAUX_ORDRE[i_min : i_max + 1]
                     except: n_acc = NIVEAUX_ORDRE
                     
-                    if c['theme'].lower() in str(row['Thème']).lower() and str(row['Difficulté']).strip() in n_acc:
-                        return ['background-color: #d1e7ff; color: black'] * len(row)
-                return [''] * len(row)
+                    if (c['theme'].lower() in str(row['Thème']).lower() and 
+                        str(row['Difficulté']).strip() in n_acc):
+                        highlight = True
+                        break
+                return ['background-color: #d1e7ff; color: black' if highlight else '' for _ in row]
 
-            # --- AFFICHAGE DU TABLEAU ---
             st.dataframe(
-                r['questions'].style.apply(highlight_rows, axis=1), 
+                r['questions'].style.apply(apply_highlight, axis=1), 
                 use_container_width=True, 
                 hide_index=True
             )
