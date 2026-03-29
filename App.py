@@ -13,19 +13,23 @@ st.markdown("""
     <style>
         header[data-testid="stHeader"] { display: none !important; }
         
-        /* On rend le titre natif de l'expander discret (gris, non-gras) */
+        /* Cache complètement le contenu du titre de l'expander */
         .stExpander summary p {
-            font-weight: 400 !important;
-            color: #555 !important;
+            display: none !important;
         }
-
-        /* Style pour notre nouveau titre injecté à l'intérieur (Gras / Gris) */
+        
+        /* Supprime le padding inutile en haut de l'intérieur de l'expander */
+        .stExpander [data-testid="stExpanderDetails"] {
+            padding-top: 1rem !important;
+        }
+        
+        /* Ajustement du container de titre personnalisé */
         .custom-title-container {
-            margin-top: -15px;
-            margin-bottom: 15px;
+            margin-top: -35px; /* On remonte le titre pour combler le vide laissé par le titre masqué */
+            margin-bottom: 20px;
             font-size: 1rem;
             border-bottom: 1px solid #f0f2f6;
-            padding-bottom: 8px;
+            padding-bottom: 10px;
         }
         .title-bold {
             color: #2c3e50;
@@ -198,10 +202,10 @@ if st.session_state.resultats_recherche:
     st.success(f"✅ {nb} {label_sujet}")
 
     for idx, r in enumerate(st.session_state.resultats_recherche):
-        # L'expander garde un titre simple
-        with st.expander(f"📄 {r['nom']} ({r['annee']})"):
+        # On met un titre vide ici car le CSS va le masquer de toute façon
+        with st.expander(" "): 
             
-            # Injection du titre stylisé avec les stats
+            # C'est cette ligne qui deviendra l'unique titre visible
             st.markdown(f"""
                 <div class="custom-title-container">
                     <span class="title-bold">📄 {r['nom']} ({r['annee']})</span>
