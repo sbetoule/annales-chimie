@@ -15,13 +15,15 @@ st.markdown("""
         header[data-testid="stHeader"] {
             display: none !important;
         }
-        /* Style du texte à l'intérieur de la barre de l'expander */
+        /* Style global du titre de l'expander */
         .stExpander summary p {
             font-size: 0.95rem !important;
-            color: #888; /* Couleur grise par défaut pour tout le titre */
+            color: #888 !important; /* Couleur grise pour les stats */
+            font-weight: 400 !important; /* Non-gras par défaut */
+            line-height: 1.2 !important;
         }
         
-        /* On force le début du texte (le nom du sujet) en noir et gras */
+        /* Force la première partie du texte en Noir et Gras */
         .stExpander summary p::first-line {
             color: #2c3e50 !important;
             font-weight: 700 !important;
@@ -241,12 +243,12 @@ if st.session_state.resultats_recherche:
     st.success(f"✅ {nb} {label_sujet}")
 
     for idx, r in enumerate(st.session_state.resultats_recherche):
-        # On formate le titre de l'expander : 
-        # Le nom est en gras, les thèmes sont après un point médian, en texte normal
-        titre_header = f"📄 {r['nom']} ({r['annee']})  •  {r['stats']}"
+        # L'astuce : on met un \n entre le nom et les stats. 
+        # Le CSS appliquera le gras uniquement sur ce qui précède le \n.
+        titre_header = f"📄 {r['nom']} ({r['annee']}) \n •  {r['stats']}"
         
         with st.expander(titre_header):
-            # --- LOGIQUE DU LIEN ---
+            # Logique du lien et du tableau (inchangée)
             nom_comparaison = r['nom'].lower()
             lien_sujet = None
             if "présélection icho" in nom_comparaison:
