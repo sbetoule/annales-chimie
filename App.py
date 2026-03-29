@@ -4,7 +4,7 @@ import pandas as pd
 # Configuration de la page
 st.set_page_config(page_title="Annales Lab Chimie", layout="wide")
 
-# --- STYLE CSS (LOGO DYNAMIQUE + CRÉDITS COMPACTS) ---
+# --- STYLE CSS ---
 st.markdown("""
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,8 +28,6 @@ st.markdown("""
             text-transform: uppercase;
             font-size: 0.75rem;
         }
-
-        /* --- Container du Logo --- */
         .logo-graphic-container {
             text-align: center;
             margin-bottom: 45px;
@@ -42,7 +40,6 @@ st.markdown("""
             transform: translateX(-50%);
             box-shadow: 0 10px 30px rgba(0,0,0,0.02);
         }
-
         .logo-text-base {
             font-family: 'Poppins', sans-serif !important;
             font-weight: 900 !important;
@@ -52,9 +49,7 @@ st.markdown("""
             margin: 0;
             display: inline-block;
         }
-
         .logo-annales { font-size: 4rem !important; color: #2c3e50; position: relative; z-index: 1; }
-        
         .logo-lab-badged {
             font-family: 'Permanent Marker', cursive !important;
             font-size: 1.7rem !important;
@@ -68,7 +63,6 @@ st.markdown("""
             z-index: 2;
             box-shadow: 0 4px 12px rgba(252, 96, 118, 0.35);
         }
-
         .logo-chimie {
             font-size: 3.5rem !important;
             background: linear-gradient(135deg, #1f77b4 0%, #3498db 100%);
@@ -79,7 +73,6 @@ st.markdown("""
             margin-top: -5px;
             display: block;
         }
-
         .logo-sub-dynamic {
             font-family: 'Roboto', sans-serif !important;
             font-size: 0.9rem !important;
@@ -89,21 +82,19 @@ st.markdown("""
             margin-top: 8px; 
             font-weight: 400;
         }
-
         .cpge-warning {
             font-size: 0.85rem; 
             color: #666; 
             font-style: italic; 
             margin-top: -10px; 
         }
-
         .stSlider [data-baseweb="slider"] div[role="presentation"] div { background-color: #fc6076 !important; }
         .stSlider [data-baseweb="slider"] div[role="slider"] { background-color: #fc6076 !important; border: 2px solid white !important; }
         div[data-testid="stThumbValue"] { color: #fc6076 !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- DONNÉES ET URLS ---
+# --- DONNÉES ---
 URL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsADsmsMnYgQXIUlU25_FlKrtTffM5XOL69taw9Pco8AHV4suIUtT0tg384XBtBAo28qGKGbtSJtIy/pub?gid=0&single=true&output=csv"
 URL_THEMES = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsADsmsMnYgQXIUlU25_FlKrtTffM5XOL69taw9Pco8AHV4suIUtT0tg384XBtBAo28qGKGbtSJtIy/pub?gid=1733310474&single=true&output=csv"
 URL_NIVEAUX = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsADsmsMnYgQXIUlU25_FlKrtTffM5XOL69taw9Pco8AHV4suIUtT0tg384XBtBAo28qGKGbtSJtIy/pub?gid=1879771001&single=true&output=csv"
@@ -151,7 +142,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# --- AFFICHAGE : LOGO ---
+# --- LOGO ---
 st.markdown("""
     <div class="logo-graphic-container">
         <span class="logo-text-base logo-annales">Annales</span>
@@ -161,7 +152,7 @@ st.markdown("""
     </div>
     """, unsafe_allow_html=True)
 
-# --- CONTENU PRINCIPAL ---
+# --- AIDE ---
 with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
     c1, c2, c3 = st.columns(3)
     with c1:
@@ -173,13 +164,13 @@ with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
     with c3:
         st.markdown("**3. Analyse**")
         st.info("⬇️ Les questions ciblées apparaîtront en bleu dans les détails.")
-    
     st.markdown("<p class='cpge-warning'>⚠️ La liste des thématiques correspond au contenu des programmes de CPGE. Des niveaux de difficulté sont indiqués par rapport à un élève de CPGE. Ces derniers sont purement indicatifs et propres à l'interprétation des concepteurs de ce site.</p>", unsafe_allow_html=True)
 
-# Barre latérale
+# --- BARRE LATÉRALE (FILTRES) ---
 with st.sidebar:
     st.header("⚙️ Filtres")
     criteres = []
+    
     niveaux_lower = [n.lower().strip() for n in NIVEAUX_ORDRE]
     try:
         s_idx, e_idx = niveaux_lower.index("facile"), niveaux_lower.index("difficile")
@@ -187,17 +178,21 @@ with st.sidebar:
         s_idx, e_idx = 0, len(NIVEAUX_ORDRE) - 1
 
     for n in range(st.session_state.nb_filtres):
-        st.subheader(f"Filtre {n+1}")
+        # On ajoute une barre horizontale pour séparer, sauf avant le premier filtre
+        if n > 0:
+            st.divider()
+        
         t = st.selectbox(f"Thème", THEMES_LISTE, key=f"t_{n}")
         d_range = st.select_slider(f"Difficulté", options=NIVEAUX_ORDRE, value=(NIVEAUX_ORDRE[s_idx], NIVEAUX_ORDRE[e_idx]), key=f"d_{n}")
         m = st.number_input(f"Quantité min.", min_value=1, value=1, key=f"m_{n}")
         criteres.append({"theme": t, "diff_range": d_range, "min": m})
     
+    st.write("") # Petit espace avant les boutons
     col1, col2 = st.columns(2)
     if col1.button("➕ Ajouter"): st.session_state.nb_filtres += 1; st.rerun()
     if col2.button("🗑️ Effacer") and st.session_state.nb_filtres > 1: st.session_state.nb_filtres -= 1; st.rerun()
 
-# Logique de recherche
+# --- RECHERCHE ET RÉSULTATS ---
 if st.button("🚀 Lancer la recherche d'annales", type="primary", use_container_width=True):
     data = charger_donnees(URL_CSV)
     trouves = []
