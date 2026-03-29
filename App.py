@@ -198,43 +198,54 @@ if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container
         
 # --- RÉSULTATS ET DÉTAILS ---
 if st.session_state.resultats_recherche:
-    # Gestion du singulier/pluriel
     nb = len(st.session_state.resultats_recherche)
     label_sujet = "sujet trouvé" if nb == 1 else "sujets trouvés"
-    
     st.success(f"✅ {nb} {label_sujet}")
-    df_res = pd.DataFrame([{"Sujet": r['nom'], "Année": r['annee'], "Questions ciblées": r['stats']} for r in st.session_state.resultats_recherche])
-    st.dataframe(df_res, use_container_width=True, hide_index=True)
 
-    st.divider()
-    choix = st.selectbox("🔍 Détails du sujet :", [r['label'] for r in st.session_state.resultats_recherche])
-    sujet = next(r for r in st.session_state.resultats_recherche if r['label'] == choix)
+    # On crée une grille pour afficher les sujets sous forme de cartes
+    for idx, r in enumerate(st.session_state.resultats_recherche):
+        with st.container():
+            # Mise en page de la "Carte"
+            col_txt, col_btn = st.columns([0.8, 0.2])
+            with col_txt:
+                st.markdown(f"### {r['nom']} ({r['annee']})")
+                st.caption(f"🎯 {r['stats']}")
+            with col_btn:
+                # Si on clique, on enregistre l'index dans le session_state
+                if st.button("Voir les détails", key=f"btn_{idx}", use_container_width=True):
+                    st.session_state.sujet_selectionne = r
+            st.divider()
 
-    # --- LOGIQUE DU BOUTON DE LIEN ---
-    lien_sujet = None
-    nom_comparaison = sujet['nom'].lower()
+    # Si un sujet a été sélectionné, on affiche ses détails en dessous
+    if 'sujet_selectionne' in st.session_state:
+        sujet = st.session_state.sujet_selectionne
+        st.markdown(f"## 🔍 Détails : {sujet['label']}")
+        
+        # --- LOGIQUE DU LIEN ---
+        nom_comparaison = sujet['nom'].lower()
+        lien_sujet = None
+        if "présélection icho" in nom_comparaison:
+            lien_sujet = "https://www.sciencesalecole.org/olympiades-internationales-de-chimie-ressources/"
+        elif "agrégation externe" in nom_comparaison:
+            lien_sujet = "https://agregation-chimie.fr/index.php/les-epreuves-ecrites/annales-des-epreuves-ecrites"
+        # ... (ajoutez vos autres liens ici)
 
-    if "présélection icho" in nom_comparaison:
-        lien_sujet = "https://www.sciencesalecole.org/olympiades-internationales-de-chimie-ressources/"
-    elif "agrégation externe spéciale" in nom_comparaison:
-        lien_sujet = "https://agregation-chimie.fr/index.php/composition-de-physique-chimie/annales-des-epreuves-ecrites"
-    elif "agrégation externe" in nom_comparaison:
-        lien_sujet = "https://agregation-chimie.fr/index.php/les-epreuves-ecrites/annales-des-epreuves-ecrites"
-    elif "capes" in nom_comparaison:
-        lien_sujet = "http://b.louchart.free.fr/Concours_et_examens/CAPES/CAPES_externe_Physique_Chimie/Sujets_et_corriges_ecrits.htmls"
+        if lien_sujet:
+            st.link_button("📄 Lien vers le sujet complet", lien_sujet, type="primary")
 
-    if lien_sujet:
-        # Bouton sobre (secondary) et largeur réduite (pas de use_container_width)
-        st.link_button("📄 Lien vers le sujet", lien_sujet, type="secondary")
+        # Affichage du tableau de questions avec surbrillance
+        def highlight_rows(row):
+            for c in criteres:
+                try:
+                    i_min = NIVEAUX_ORDRE.index(c['diff_range'][0])
+                    i_max = NIVEAUX_ORDRE.index(c['diff_range'][1])
+                    n_acc = NIVEAUX_ORDRE[i_min : i_max + 1]
+                except: n_acc = NIVEAUX_ORDRE
+                
+                if c['theme'].lower() in str(row['Thème']).lower() and str(row['Difficulté']).strip() in n_acc:
+                    return ['background-color: #d1e7ff; color: black'] * len(row)
+            return [''] * len(row)
 
-    def highlight_rows(row):
-        for c in criteres:
-            i_min, i_max = NIVEAUX_ORDRE.index(c['diff_range'][0]), NIVEAUX_ORDRE.index(c['diff_range'][1])
-            n_acc = NIVEAUX_ORDRE[i_min : i_max + 1]
-            if c['theme'].lower() in str(row['Thème']).lower() and str(row['Difficulté']).strip() in n_acc:
-                return ['background-color: #d1e7ff; color: black'] * len(row)
-        return [''] * len(row)
-
-    st.dataframe(sujet['questions'].style.apply(highlight_rows, axis=1), use_container_width=True, hide_index=True)
+        st.dataframe(sujet['questions'].style.apply(highlight_rows, axis=1), use_container_width=True, hide_index=True)
 elif st.session_state.resultats_recherche == []:
     st.warning("Aucun résultat.")
