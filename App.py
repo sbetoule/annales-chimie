@@ -68,7 +68,8 @@ def recuperer_listes(url_themes, url_niveaux):
         return themes, niveaux
     except: return ["Erreur"], ["facile", "moyen", "difficile"]
 
-THEMES_LISTE, NIVEAUX_ORDRE = recuperer_listes(URL_THEMES, URL_NIVEAUX)
+with st.spinner("Initialisation des thématiques..."):
+    THEMES_LISTE, NIVEAUX_ORDRE = recuperer_listes(URL_THEMES, URL_NIVEAUX)
 
 if 'resultats_recherche' not in st.session_state: st.session_state.resultats_recherche = None
 if 'nb_filtres' not in st.session_state: st.session_state.nb_filtres = 1
@@ -137,25 +138,26 @@ with st.sidebar:
     if col1.button("➕ Ajouter"): st.session_state.nb_filtres += 1; st.rerun()
     if col2.button("🗑️ Effacer") and st.session_state.nb_filtres > 1: st.session_state.nb_filtres -= 1; st.rerun()
 
-# --- RECHERCHE ---
+# --- À MODIFIER (Ligne ~114) ---
 if st.button("🚀 Lancer la recherche d'annales", type="primary", use_container_width=True):
-    data = charger_donnees(URL_CSV)
-    trouves = []
-    for s in data:
-        q = s['questions']
-        valid, stats = True, []
-        for c in criteres:
-            i_min, i_max = NIVEAUX_ORDRE.index(c['diff_range'][0]), NIVEAUX_ORDRE.index(c['diff_range'][1])
-            n_acc = NIVEAUX_ORDRE[i_min : i_max + 1]
-            mask = (q['Thème'].astype(str).str.contains(c['theme'], case=False)) & (q['Difficulté'].astype(str).str.strip().isin(n_acc))
-            count = len(q[mask])
-            stats.append(f"{c['theme']} ({count})")
-            if count < c['min']: valid = False; break
-        if valid:
-            s['stats'] = " | ".join(stats)
-            trouves.append(s)
-    st.session_state.resultats_recherche = sorted(trouves, key=lambda x: x['annee'], reverse=True)
-
+    with st.spinner("Analyse de la base de données en cours..."):
+        data = charger_donnees(URL_CSV)
+        trouves = []
+        for s in data:
+            q = s['questions']
+            valid, stats = True, []
+            for c in criteres:
+                i_min, i_max = NIVEAUX_ORDRE.index(c['diff_range'][0]), NIVEAUX_ORDRE.index(c['diff_range'][1])
+                n_acc = NIVEAUX_ORDRE[i_min : i_max + 1]
+                mask = (q['Thème'].astype(str).str.contains(c['theme'], case=False)) & (q['Difficulté'].astype(str).str.strip().isin(n_acc))
+                count = len(q[mask])
+                stats.append(f"{c['theme']} ({count})")
+                if count < c['min']: valid = False; break
+            if valid:
+                s['stats'] = " | ".join(stats)
+                trouves.append(s)
+        st.session_state.resultats_recherche = sorted(trouves, key=lambda x: x['annee'], reverse=True)
+        
 # --- RÉSULTATS ET DÉTAILS ---
 if st.session_state.resultats_recherche:
     st.success(f"✅ {len(st.session_state.resultats_recherche)} sujets trouvés")
