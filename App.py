@@ -3,38 +3,47 @@ import pandas as pd
 
 st.set_page_config(page_title="Annales Lab", layout="wide")
 
-# --- STYLE CSS FINAL ---
+# --- STYLE CSS BLINDÉ ---
 st.markdown("""
     <style>
-        /* 1. La barre entre les deux curseurs (le segment actif) */
-        .stSlider [data-baseweb="slider"] > div > div > div > div {
+        /* 1. Couleur de la barre active (entre les deux points) */
+        /* On cible spécifiquement le div qui porte la couleur de progression */
+        .stSlider [data-baseweb="slider"] div[data-testid="stTickBar"] + div + div div {
             background-color: #1f77b4 !important;
         }
 
-        /* 2. Les cercles aux extrémités (les "Thumbs") */
+        /* Version alternative pour forcer la barre active */
+        .stSlider [data-baseweb="slider"] > div > div > div > div {
+            background: #1f77b4 !important;
+        }
+
+        /* 2. Couleur des cercles (Handles) */
         .stSlider [data-baseweb="slider"] [role="slider"] {
             background-color: #1f77b4 !important;
             border: 2px solid #1f77b4 !important;
         }
 
-        /* 3. Le texte au-dessus des cercles */
+        /* 3. Couleur du texte au-dessus (facile, difficile...) */
         div[data-testid="stThumbValue"] {
             color: #1f77b4 !important;
             font-weight: bold !important;
         }
 
-        /* 4. La barre de fond (segment inactif) */
+        /* 4. Nettoyage du fond (pour enlever le rectangle gris) */
+        .stSlider [data-baseweb="slider"] {
+            background-color: transparent !important;
+        }
+        
         .stSlider [data-baseweb="slider"] > div {
-            background-color: #e6e6e6 !important;
+            background-color: transparent !important;
         }
 
-        /* 5. Cacher les labels rouges répétitifs en bas si nécessaire */
-        .stSlider [data-baseweb="slider"] > div + div {
+        /* 5. Cacher les labels rouges parasites sous la barre */
+        .stSlider [data-baseweb="slider"] div[aria-hidden="true"] {
             display: none !important;
         }
     </style>
     """, unsafe_allow_html=True)
-
 # --- URLS DES FLUX ---
 URL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsADsmsMnYgQXIUlU25_FlKrtTffM5XOL69taw9Pco8AHV4suIUtT0tg384XBtBAo28qGKGbtSJtIy/pub?gid=0&single=true&output=csv"
 URL_THEMES = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsADsmsMnYgQXIUlU25_FlKrtTffM5XOL69taw9Pco8AHV4suIUtT0tg384XBtBAo28qGKGbtSJtIy/pub?gid=1733310474&single=true&output=csv"
