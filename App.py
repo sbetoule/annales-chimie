@@ -33,7 +33,7 @@ st.markdown("""
         .logo-graphic-container {
             text-align: center;
             margin-bottom: 45px;
-            padding: 25px 40px 10px 40px; /* Réduit de 25px à 15px en bas */
+            padding: 25px 40px 0px 40px; /* Réduit de 25px à 0px en bas */
             background: linear-gradient(165deg, rgba(255, 154, 68, 0.05) 0%, rgba(252, 96, 118, 0.08) 100%);
             border-radius: 50px 15px 70px 20px;
             display: inline-block;
