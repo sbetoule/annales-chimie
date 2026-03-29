@@ -104,7 +104,20 @@ if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container
         del st.session_state.sujet_selectionne
     with st.spinner("Analyse de la base de données en cours..."):
         data = charger_donnees(URL_CSV)
-        trouves = []
+        if st.button("🔎 Lancer la recherche d'annales"):
+            data = charger_donnees(URL_CSV)
+            
+            st.write("### 🔍 Diagnostic Structure CSV")
+            if not data:
+                st.error("❌ Le fichier principal est vide ou inaccessible.")
+            else:
+                st.info(f"Sujets détectés : {len(data)}")
+                # On vérifie le premier sujet pour voir si les colonnes sont au bon endroit
+                premier_sujet = data[0]
+                st.write(f"Vérification du sujet : **{premier_sujet['nom']}**")
+                st.write("Colonnes détectées :", premier_sujet['questions'].columns.tolist())
+                st.dataframe(premier_sujet['questions'].head(2)) # Affiche les 2 premières lignes
+                trouves = []
         
         for s in data:
             q = s['questions']
