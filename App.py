@@ -102,6 +102,9 @@ URL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsADsmsMnYgQXIUlU25_
 URL_THEMES = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsADsmsMnYgQXIUlU25_FlKrtTffM5XOL69taw9Pco8AHV4suIUtT0tg384XBtBAo28qGKGbtSJtIy/pub?gid=1733310474&single=true&output=csv"
 URL_NIVEAUX = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsADsmsMnYgQXIUlU25_FlKrtTffM5XOL69taw9Pco8AHV4suIUtT0tg384XBtBAo28qGKGbtSJtIy/pub?gid=1879771001&single=true&output=csv"
 
+# --- TEST DE SURVIE ---
+st.sidebar.warning("Le script est arrivé jusqu'ici") # Si vous voyez ça, la sidebar marche
+
 @st.cache_data(ttl=60)
 def recuperer_listes(url_themes, url_niveaux):
     try:
@@ -110,14 +113,14 @@ def recuperer_listes(url_themes, url_niveaux):
         df_n = pd.read_csv(url_niveaux, header=None)
         niveaux = df_n.iloc[0].dropna().astype(str).tolist()
         return themes, niveaux
-    except: return ["Erreur"], ["facile", "moyen", "difficile"]
+    except Exception as e:
+        # On affiche l'erreur réelle dans la sidebar
+        st.sidebar.error(f"Erreur de lecture CSV : {e}")
+        return ["Erreur de chargement"], ["facile", "moyen", "difficile"]
 
-with st.spinner("Initialisation des thématiques..."):
-    THEMES_LISTE, NIVEAUX_ORDRE = recuperer_listes(URL_THEMES, URL_NIVEAUX)
-        # TEST 1 : Diagnostic des listes
-    st.sidebar.write(f"DEBUG - Thèmes chargés : {len(THEMES_LISTE)}")
-    if THEMES_LISTE == ["Erreur"]:
-        st.sidebar.error("❌ Impossible de lire le fichier des Thèmes")
+# On n'utilise pas le spinner pour le test, on appelle direct
+THEMES_LISTE, NIVEAUX_ORDRE = recuperer_listes(URL_THEMES, URL_NIVEAUX)
+st.sidebar.success(f"Thèmes chargés : {len(THEMES_LISTE)}")
 
 if 'resultats_recherche' not in st.session_state: st.session_state.resultats_recherche = None
 if 'nb_filtres' not in st.session_state: st.session_state.nb_filtres = 1
