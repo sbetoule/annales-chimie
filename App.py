@@ -231,7 +231,7 @@ if st.session_state.resultats_recherche:
         
         with c_text:
             st.markdown(f"<p class='result-title'>{r['nom']} ({r['annee']})</p>", unsafe_allow_html=True)
-            st.markdown(f"<p class='result-stats'>🎯 {r['stats']}</p>", unsafe_allow_html=True)
+            st.markdown(f"<p class='result-stats'>{r['stats']}</p>", unsafe_allow_html=True)
         
         with c_btn:
             # Bouton "Détails" petit et sobre
