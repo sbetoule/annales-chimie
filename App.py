@@ -160,7 +160,7 @@ if st.session_state.resultats_recherche:
     choix = st.selectbox("🔍 Détails du sujet :", [r['label'] for r in st.session_state.resultats_recherche])
     sujet = next(r for r in st.session_state.resultats_recherche if r['label'] == choix)
     
-    # --- NOUVEAU : BOUTON LIEN VERS LE SUJET ---
+    # --- LOGIQUE DU BOUTON DE LIEN ---
     lien_sujet = None
     nom_comparaison = sujet['nom'].lower()
     
@@ -172,7 +172,8 @@ if st.session_state.resultats_recherche:
         lien_sujet = "https://agregation-chimie.fr/index.php/les-epreuves-ecrites/annales-des-epreuves-ecrites"
     
     if lien_sujet:
-        st.link_button(f"📄 Voir le sujet original : {sujet['nom']}", lien_sujet, type="primary", use_container_width=True)
+        # Bouton sobre (secondary) et largeur réduite (pas de use_container_width)
+        st.link_button("📄 Lien vers le sujet", lien_sujet, type="secondary")
     
     def highlight_rows(row):
         for c in criteres:
