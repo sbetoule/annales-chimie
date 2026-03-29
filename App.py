@@ -28,7 +28,7 @@ st.markdown("""
             color: #1f77b4 !important;
             font-weight: bold !important;
         }
-        /* Supprimer les points/labels rouges automatiques de Streamlit si présents */
+        /* Supprimer les points/labels rouges automatiques de Streamlit */
         .stSlider [data-baseweb="slider"] div div div {
              color: transparent !important;
         }
@@ -49,11 +49,10 @@ def recuperer_listes(url_themes, url_niveaux):
         df_t = pd.read_csv(url_themes, header=None)
         themes = df_t.iloc[0].dropna().astype(str).tolist()
         df_n = pd.read_csv(url_niveaux, header=None)
-        # On garde l'ordre brut de l'onglet Excel pour le curseur
         niveaux = df_n.iloc[0].dropna().astype(str).tolist()
         return themes, niveaux
     except:
-        return ["Erreur"], ["Facile", "Moyen", "Difficile"]
+        return ["Erreur"], ["facile", "moyen", "difficile"]
 
 THEMES_LISTE, NIVEAUX_ORDRE = recuperer_listes(URL_THEMES, URL_NIVEAUX)
 
@@ -122,9 +121,20 @@ with st.sidebar:
         st.subheader(f"Filtre {n+1}")
         t = st.selectbox(f"Thème", THEMES_LISTE, key=f"t_{n}")
         
-        # Initialisation par défaut entre "Facile" et "Difficile"
-        start_val = "Facile" if "Facile" in NIVEAUX_ORDRE else NIVEAUX_ORDRE[0]
-        end_val = "Difficile" if "Difficile" in NIVEAUX_ORDRE else NIVEAUX_ORDRE[-1]
+        # Initialisation intelligente (insensible à la casse)
+        niveaux_lower = [str(x).lower() for x in NIVEAUX_ORDRE]
+        
+        try:
+            idx_start = niveaux_lower.index("facile")
+            start_val = NIVEAUX_ORDRE[idx_start]
+        except ValueError:
+            start_val = NIVEAUX_ORDRE[0]
+            
+        try:
+            idx_end = niveaux_lower.index("difficile")
+            end_val = NIVEAUX_ORDRE[idx_end]
+        except ValueError:
+            end_val = NIVEAUX_ORDRE[-1]
         
         d_range = st.select_slider(
             f"Plage de difficulté",
@@ -152,7 +162,6 @@ if st.button("🚀 Lancer la recherche", type="primary", use_container_width=Tru
         valid = True
         stats = []
         for c in criteres:
-            # Calcul de la plage acceptée
             idx_min = NIVEAUX_ORDRE.index(c['diff_range'][0])
             idx_max = NIVEAUX_ORDRE.index(c['diff_range'][1])
             niveaux_acceptes = NIVEAUX_ORDRE[idx_min : idx_max + 1]
@@ -171,7 +180,6 @@ if st.button("🚀 Lancer la recherche", type="primary", use_container_width=Tru
             s['stats'] = " | ".join(stats)
             trouves.append(s)
     
-    # TRI PAR ANNÉE (DÉCROISSANT)
     trouves.sort(key=lambda x: pd.to_numeric(x['annee'], errors='coerce'), reverse=True)
     st.session_state.resultats_recherche = trouves
 
