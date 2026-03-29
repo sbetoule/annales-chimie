@@ -114,6 +114,10 @@ def recuperer_listes(url_themes, url_niveaux):
 
 with st.spinner("Initialisation des thématiques..."):
     THEMES_LISTE, NIVEAUX_ORDRE = recuperer_listes(URL_THEMES, URL_NIVEAUX)
+        # TEST 1 : Diagnostic des listes
+    st.sidebar.write(f"DEBUG - Thèmes chargés : {len(THEMES_LISTE)}")
+    if THEMES_LISTE == ["Erreur"]:
+        st.sidebar.error("❌ Impossible de lire le fichier des Thèmes")
 
 if 'resultats_recherche' not in st.session_state: st.session_state.resultats_recherche = None
 if 'nb_filtres' not in st.session_state: st.session_state.nb_filtres = 1
