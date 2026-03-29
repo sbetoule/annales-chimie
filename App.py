@@ -13,9 +13,26 @@ st.markdown("""
     <style>
         header[data-testid="stHeader"] { display: none !important; }
         
-        /* Cache complètement le contenu du titre de l'expander */
+        /* Style pour le titre externe (qui simule le titre de l'expander) */
+        .custom-header {
+            background-color: #ffffff;
+            border: 1px solid #e6e9ef;
+            border-radius: 8px 8px 0 0; /* Arrondi seulement en haut */
+            padding: 10px 15px;
+            margin-bottom: -44px; /* "Avale" l'expander pour le coller */
+            position: relative;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            pointer-events: none; /* Laisse le clic passer à l'expander en dessous */
+        }
+        
+        /* On cache le titre natif de l'expander et on ajuste sa forme */
+        .stExpander {
+            border-radius: 0 0 8px 8px !important; /* Arrondi seulement en bas */
+        }
         .stExpander summary p {
-            display: none !important;
+            visibility: hidden !important; /* Cache le texte mais garde l'espace pour la flèche */
         }
         
         /* Supprime le padding inutile en haut de l'intérieur de l'expander */
@@ -202,17 +219,20 @@ if st.session_state.resultats_recherche:
     st.success(f"✅ {nb} {label_sujet}")
 
     for idx, r in enumerate(st.session_state.resultats_recherche):
-        # On met un titre vide ici car le CSS va le masquer de toute façon
-        with st.expander(" "): 
+        # 1. Titre personnalisé (visible tout le temps)
+        st.markdown(f"""
+            <div class="custom-header">
+                <span style="margin-right:25px;"></span> 
+                <span class="title-bold">📄 {r['nom']} ({r['annee']})</span>
+                <span class="title-stats">• {r['stats']}</span>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # 2. L'expander (la flèche sera à gauche du titre ci-dessus)
+        with st.expander(" "):
+            # --- LOGIQUE INTERNE (On définit tout AVANT d'afficher) ---
             
-            # C'est cette ligne qui deviendra l'unique titre visible
-            st.markdown(f"""
-                <div class="custom-title-container">
-                    <span class="title-bold">📄 {r['nom']} ({r['annee']})</span>
-                    <span class="title-stats">• {r['stats']}</span>
-                </div>
-                """, unsafe_allow_html=True)
-    
+            # Gestion des liens
             nom_comparaison = r['nom'].lower()
             lien_sujet = None
             if "présélection icho" in nom_comparaison:
@@ -223,10 +243,10 @@ if st.session_state.resultats_recherche:
                 lien_sujet = "https://agregation-chimie.fr/index.php/les-epreuves-ecrites/annales-des-epreuves-ecrites"
             elif "capes" in nom_comparaison:
                 lien_sujet = "http://b.louchart.free.fr/Concours_et_examens/CAPES/CAPES_externe_Physique_Chimie/Sujets_et_corriges_ecrits.htmls"
-    
+            
             if lien_sujet:
                 st.link_button("🔗 Consulter le sujet", lien_sujet, type="secondary")
-                st.write("") # Petit espace
+                st.write("") 
 
             # Fonction de surbrillance
             def highlight_rows(row):
@@ -240,7 +260,8 @@ if st.session_state.resultats_recherche:
                     if c['theme'].lower() in str(row['Thème']).lower() and str(row['Difficulté']).strip() in n_acc:
                         return ['background-color: #d1e7ff; color: black'] * len(row)
                 return [''] * len(row)
-    
+
+            # --- AFFICHAGE DU TABLEAU ---
             st.dataframe(
                 r['questions'].style.apply(highlight_rows, axis=1), 
                 use_container_width=True, 
