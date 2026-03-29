@@ -50,22 +50,27 @@ st.markdown("""
             z-index: 1; /* Derrière Lab */
         }
 
-        /* "Lab" : Dynamique, de biais, superposé, jaune néon */
-        .logo-lab-badged {
-            font-family: 'Permanent Marker', cursive !important; /* Police Tag/Manuscrite */
-            font-size: 2.8rem !important;
-            color: #ccff00; /* Jaune néon vibrant */
-            background-color: #1f77b4; /* Fond bleu pour le badge */
-            padding: 5px 20px;
-            border-radius: 50px; /* Très arrondi */
-            position: absolute;
-            top: 25px; /* Position verticale */
-            right: -20px; /* Position horizontale, dépasse légèrement */
-            transform: rotate(-15deg); /* Rotation de biais */
-            z-index: 2; /* Devant Annales */
-            box-shadow: 3px 3px 10px rgba(0,0,0,0.3); /* Ombre portée */
-            letter-spacing: 0; /* Pas d'espacement pour cette police */
-        }
+       /* "Lab" : Dynamique, de biais, superposé, Corail Solaire & Blanc Glacé */
+.logo-lab-badged {
+    font-family: 'Permanent Marker', cursive !important; /* Police Tag/Manuscrite */
+    font-size: 2.8rem !important;
+    
+    /* COULEUR DU TEXTE : Blanc très pur */
+    color: #ffffff; 
+
+    /* FOND DU BADGE : Dégradé Corail Solaire (Orange-Rose) */
+    background: linear-gradient(135deg, #ff9a44 0%, #fc6076 100%); 
+    
+    padding: 5px 20px;
+    border-radius: 50px; /* Très arrondi */
+    position: absolute;
+    top: 25px; /* Position verticale */
+    right: -20px; /* Position horizontale, dépasse légèrement */
+    transform: rotate(-15deg); /* Rotation de biais */
+    z-index: 2; /* Devant Annales */
+    box-shadow: 0 4px 15px rgba(252, 96, 118, 0.3); /* Ombre corail douce */
+    letter-spacing: 0; /* Pas d'espacement pour cette police */
+}
 
         /* "Chimie" : Noir mat/Gris très foncé, aligné dessous */
         .logo-chimie {
