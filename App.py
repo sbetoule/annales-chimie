@@ -148,31 +148,35 @@ if st.button("🚀 Lancer la recherche d'annales", type="primary", use_container
             valid = True
             stats = []
             
-            # On vérifie chaque critère l'un après l'autre
-            for c in criteres:
-                # 1. On récupère la liste des niveaux acceptés pour ce critère précis
-                try:
-                    i_min = NIVEAUX_ORDRE.index(c['diff_range'][0])
-                    i_max = NIVEAUX_ORDRE.index(c['diff_range'][1])
-                    n_acc = NIVEAUX_ORDRE[i_min : i_max + 1]
-                except ValueError:
-                    n_acc = NIVEAUX_ORDRE # Sécurité
+            # On crée une copie propre de la colonne Thème pour éviter les espaces ou majuscules parasites
+            themes_sujet = q['Thème'].astype(str).str.strip().str.lower()
+            difficultes_sujet = q['Difficulté'].astype(str).str.strip().str.lower()
 
-                # 2. On filtre les questions du sujet pour CE critère
-                # Correction : On utilise .str.strip() sur le thème pour éviter les espaces parasites
-                mask = (
-                    (q['Thème'].astype(str).str.contains(c['theme'], case=False, na=False)) & 
-                    (q['Difficulté'].astype(str).str.strip().isin(n_acc))
-                )
+            for c in criteres:
+                # Préparation du critère (nettoyage)
+                theme_recherche = str(c['theme']).strip().lower()
                 
-                count = len(q[mask])
+                # Récupération de la plage de difficulté
+                try:
+                    idx_start = NIVEAUX_ORDRE.index(c['diff_range'][0])
+                    idx_end = NIVEAUX_ORDRE.index(c['diff_range'][1])
+                    n_acc = [n.lower().strip() for n in NIVEAUX_ORDRE[idx_start : idx_end + 1]]
+                except:
+                    n_acc = [n.lower().strip() for n in NIVEAUX_ORDRE]
+
+                # --- LA LOGIQUE DE FILTRAGE ---
+                # On vérifie si le thème recherché est contenu dans le texte de la cellule
+                mask_theme = themes_sujet.str.contains(theme_recherche, regex=False, na=False)
+                mask_diff = difficultes_sujet.isin(n_acc)
+                
+                count = len(q[mask_theme & mask_diff])
                 stats.append(f"{c['theme']} ({count})")
                 
-                # 3. Si un seul des critères n'est pas rempli, on rejette le sujet
+                # Si le nombre de questions pour ce thème est insuffisant, on rejette le sujet
                 if count < c['min']:
                     valid = False
-                    break # Pas besoin de vérifier les autres thèmes pour ce sujet
-            
+                    break 
+
             if valid:
                 s['stats'] = " | ".join(stats)
                 trouves.append(s)
