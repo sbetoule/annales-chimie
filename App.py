@@ -181,7 +181,9 @@ if st.button("🚀 Lancer la recherche d'annales", type="primary", use_container
                 s['stats'] = " | ".join(stats)
                 trouves.append(s)
         
-        st.session_state.resultats_recherche = sorted(trouves, key=lambda x: x['annee'], reverse=True)
+        # --- NOUVEAU SYSTÈME DE TRI ---
+        trouves.sort(key=lambda x: x['nom'].lower()) # Tri alphabétique A-Z
+        st.session_state.resultats_recherche = sorted(trouves, key=lambda x: x['annee'], reverse=True) # Tri année 2024-2000
         
 # --- RÉSULTATS ET DÉTAILS ---
 if st.session_state.resultats_recherche:
