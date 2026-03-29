@@ -15,18 +15,14 @@ st.markdown("""
         header[data-testid="stHeader"] {
             display: none !important;
         }
-        /* Style du texte à l'intérieur de la barre de l'expander */
+        
+      /* Style de base du texte dans l'expander */
         .stExpander summary p {
             font-size: 0.95rem !important;
-            color: #888; /* Couleur grise par défaut pour tout le titre */
-        }
-        
-        /* On force le début du texte (le nom du sujet) en noir et gras */
-        .stExpander summary p::first-line {
-            color: #2c3e50 !important;
-            font-weight: 700 !important;
+            color: #2c3e50; /* Couleur sombre pour le titre */
         }
 
+        /* On retire la règle ::first-line qui causait le bug */
         /* Optionnel : Enlever la bordure rouge de l'expander quand on clique dessus */
         .stExpander:focus {
             outline: none !important;
@@ -241,11 +237,18 @@ if st.session_state.resultats_recherche:
     st.success(f"✅ {nb} {label_sujet}")
 
     for idx, r in enumerate(st.session_state.resultats_recherche):
-        # On formate le titre de l'expander : 
-        # Le nom est en gras, les thèmes sont après un point médian, en texte normal
-        titre_header = f"📄 {r['nom']} ({r['annee']})  •  {r['stats']}"
+        # On utilise une flèche ou un séparateur pour bien distinguer les deux parties
+        # Le gras de l'expander s'appliquera, mais la séparation sera nette
+        titre_header = f"📄 {r['nom']} ({r['annee']})  |  {r['stats']}"
         
         with st.expander(titre_header):
+            # Optionnel : On rappelle le titre avec le vrai style à l'intérieur
+            st.markdown(f"""
+                <div style="margin-bottom: 15px;">
+                    <span style="color: #2c3e50; font-weight: 700; font-size: 1.1rem;">📄 {r['nom']} ({r['annee']})</span>
+                    <span style="color: #888; font-weight: 400; margin-left: 10px;">• {r['stats']}</span>
+                </div>
+            """, unsafe_allow_html=True)
             # --- LOGIQUE DU LIEN ---
             nom_comparaison = r['nom'].lower()
             lien_sujet = None
