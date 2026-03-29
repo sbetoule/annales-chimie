@@ -138,24 +138,45 @@ with st.sidebar:
     if col1.button("➕ Ajouter"): st.session_state.nb_filtres += 1; st.rerun()
     if col2.button("🗑️ Effacer") and st.session_state.nb_filtres > 1: st.session_state.nb_filtres -= 1; st.rerun()
 
-# --- À MODIFIER (Ligne ~114) ---
 if st.button("🚀 Lancer la recherche d'annales", type="primary", use_container_width=True):
     with st.spinner("Analyse de la base de données en cours..."):
         data = charger_donnees(URL_CSV)
         trouves = []
+        
         for s in data:
             q = s['questions']
-            valid, stats = True, []
+            valid = True
+            stats = []
+            
+            # On vérifie chaque critère l'un après l'autre
             for c in criteres:
-                i_min, i_max = NIVEAUX_ORDRE.index(c['diff_range'][0]), NIVEAUX_ORDRE.index(c['diff_range'][1])
-                n_acc = NIVEAUX_ORDRE[i_min : i_max + 1]
-                mask = (q['Thème'].astype(str).str.contains(c['theme'], case=False)) & (q['Difficulté'].astype(str).str.strip().isin(n_acc))
+                # 1. On récupère la liste des niveaux acceptés pour ce critère précis
+                try:
+                    i_min = NIVEAUX_ORDRE.index(c['diff_range'][0])
+                    i_max = NIVEAUX_ORDRE.index(c['diff_range'][1])
+                    n_acc = NIVEAUX_ORDRE[i_min : i_max + 1]
+                except ValueError:
+                    n_acc = NIVEAUX_ORDRE # Sécurité
+
+                # 2. On filtre les questions du sujet pour CE critère
+                # Correction : On utilise .str.strip() sur le thème pour éviter les espaces parasites
+                mask = (
+                    (q['Thème'].astype(str).str.contains(c['theme'], case=False, na=False)) & 
+                    (q['Difficulté'].astype(str).str.strip().isin(n_acc))
+                )
+                
                 count = len(q[mask])
                 stats.append(f"{c['theme']} ({count})")
-                if count < c['min']: valid = False; break
+                
+                # 3. Si un seul des critères n'est pas rempli, on rejette le sujet
+                if count < c['min']:
+                    valid = False
+                    break # Pas besoin de vérifier les autres thèmes pour ce sujet
+            
             if valid:
                 s['stats'] = " | ".join(stats)
                 trouves.append(s)
+        
         st.session_state.resultats_recherche = sorted(trouves, key=lambda x: x['annee'], reverse=True)
         
 # --- RÉSULTATS ET DÉTAILS ---
