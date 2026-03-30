@@ -167,8 +167,23 @@ with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
     st.markdown("<p class='cpge-warning'>⚠️ La liste des thématiques correspond au contenu des programmes de CPGE. Des niveaux de difficulté sont indiqués par rapport à un élève de CPGE. Ces derniers sont purement indicatifs et propres à l'interprétation des concepteurs de ce site.</p>", unsafe_allow_html=True)
 
 # --- BARRE LATÉRALE ---
+def classifier_concours(nom_sujet):
+    nom = str(nom_sujet).upper()
+    if "ICHO" in nom:
+        return "IChO"
+    if "CAPES" in nom or "AGREG" in nom:
+        return "Enseignement (Agreg / CAPES)"
+    return "CPGE"
 with st.sidebar:
     st.header("⚙️ Filtres")
+    # --- NOUVEAU FILTRE CONCOURS ---
+    st.subheader("Concours")
+    categories_choisies = st.multiselect(
+        "Filtrer par type :",
+        options=["CPGE", "Enseignement (Agreg / CAPES)", "IChO"],
+        default=["CPGE", "Enseignement (Agreg / CAPES)", "IChO"]
+    )
+    st.divider()
     criteres = []
     niveaux_lower = [n.lower().strip() for n in NIVEAUX_ORDRE]
     try: s_idx, e_idx = niveaux_lower.index("facile"), niveaux_lower.index("difficile")
@@ -190,8 +205,13 @@ if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container
     with st.spinner("Analyse de la base de données en cours..."):
         data = charger_donnees(URL_CSV)
         trouves = []
-        
         for s in data:
+            # 1. Vérification de la catégorie d'abord
+            categorie_sujet = classifier_concours(s['nom'])
+            if categorie_sujet not in categories_choisies:
+                continue # On passe au sujet suivant s'il n'est pas coché
+            
+            # 2. Reste de votre logique actuelle
             q = s['questions']
             valid = True
             stats = []
