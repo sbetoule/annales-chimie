@@ -172,7 +172,7 @@ def classifier_concours(nom_sujet):
     if "ICHO" in nom:
         return "IChO"
     if "CAPES" in nom or "AGREG" in nom:
-        return "Enseignement (Agreg / CAPES)"
+        return "Agreg / CAPES"
     return "CPGE"
 with st.sidebar:
     st.header("⚙️ Filtres")
