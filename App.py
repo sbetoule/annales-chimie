@@ -22,7 +22,6 @@ st.markdown("""
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@800;900&family=Permanent+Marker&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <meta name="google-site-verification" content="P0IXsCkI0Q_8mtc_DUEgCkkbn8EXlGRgl-cmk4f3bV8" />
     <style>
         
       /* Style de base du texte dans l'expander */
