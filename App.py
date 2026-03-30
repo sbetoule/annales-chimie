@@ -298,6 +298,3 @@ if st.session_state.resultats_recherche:
 
 elif st.session_state.resultats_recherche == []:
     st.warning("Aucun résultat.")
-if "validation" in query_params:
-    st.write(contenu_google)
-    st.stop() # Arrête l'affichage du reste du site
