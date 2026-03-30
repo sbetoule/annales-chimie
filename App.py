@@ -298,3 +298,13 @@ if st.session_state.resultats_recherche:
 
 elif st.session_state.resultats_recherche == []:
     st.warning("Aucun résultat.")
+# --- HACK DE VALIDATION POUR GOOGLE ---
+# Récupérez le nom exact du fichier et le contenu demandés par Google
+nom_fichier_google = "google76e3d54030634621.html" # <--- EXEMPLE : À MODIFIER
+contenu_google = "google-site-verification: google76e3d54030634621.html" # <--- EXEMPLE : À MODIFIER
+
+# On ajoute un paramètre dans l'URL pour la validation
+query_params = st.query_params
+if "validation" in query_params:
+    st.write(contenu_google)
+    st.stop() # Arrête l'affichage du reste du site
