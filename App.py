@@ -143,10 +143,9 @@ st.markdown("""
     <span class="credits-qsn">Développé par </span>
     <b>Sylvain Betoule</b> (Doctorant, Sorbonne Univ.) • 
     <b>Ulysse Garnier</b> (Doctorant, Sorbonne Univ.) • 
-    <b>Morgane Leite</b> (Resp. prépa agrégation de chimie, ENS)
-    <br>
+    <b>Morgane Leite</b> (Resp. prépa agrégation de chimie, ENS) • 
     <a href="mailto:sylvain.betoule@gmail.com?subject=Annales%20Lab%20Chimie" 
-       style="color: #fc6076; text-decoration: none; font-size: 0.8rem; margin-top: 5px; display: inline-block; opacity: 0.8;">
+       style="color: #fc6076; text-decoration: none; font-weight: bold; font-size: 0.85rem; margin-left: 5px;">
        📩 Nous contacter
     </a>
 </div>
