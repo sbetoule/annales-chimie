@@ -251,9 +251,23 @@ if st.session_state.resultats_recherche:
                 lien_sujet = "http://b.louchart.free.fr/Concours_et_examens/CAPES/CAPES_externe_Physique_Chimie/Sujets_et_corriges_ecrits.htmls"
             elif "agreg interne" in nom_comparaison:
                 lien_sujet = "http://www.agregation-interne-physique-chimie.org/annales-des-eacutepreuves-eacutecrites.html"
+            elif "ccp" in nom_comparaison:
+                lien_sujet = "https://www.concours-commun-inp.fr/fr/epreuves/annales/annales-pc.html"
+            elif "centrale" in nom_comparaison:
+                lien_sujet = "https://www.concours-centrale-supelec.fr/sujets-rapports"
+            elif "mines" in nom_comparaison:
+                lien_sujet = "https://concoursminesponts.fr/annales/"
+            elif "e3a" in nom_comparaison:
+                lien_sujet = "https://www.e3a-polytech.fr/annales-et-rapport/"
+            elif "agro véto" in nom_comparaison:
+                lien_sujet = "https://www.concours-agro-veto.fr/archives-sujets-rapports/sujets-rapports-concours-cpge-bcpst/epreuves-ecrites-concours-cpge-bcpst#Chimie"
+            elif "ENS - Chimie - BCPST" in nom_comparaison:
+                lien_sujet = "https://banques-ecoles.fr/cms/filiere-bcpst/les-annales-et-rapports-des-jurys/#chimie"
+            elif "ENS" in nom_comparaison:
+                lien_sujet = "https://banques-ecoles.fr/cms/filiere-pc/annales-de-la-banque-pc/"
 
             if lien_sujet:
-                st.link_button("📄 Lien vers le sujet", lien_sujet, type="secondary")
+                st.link_button("🔗 Lien vers le sujet", lien_sujet, type="secondary")
 
             # Fonction de surbrillance
             def highlight_rows(row):
