@@ -16,13 +16,12 @@ st.set_page_config(
         """
     }
 )
-
+st.markdown('<meta name="google-site-verification" content="P0IXsCkI0Q_8mtc_DUEgCkkbn8EXlGRgl-cmk4f3bV8" />', unsafe_allow_html=True)
 # --- STYLE CSS (LOGO, CRÉDITS, ANIMATION MOBILE) ---
 st.markdown("""
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@800;900&family=Permanent+Marker&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <meta name="google-site-verification" content="P0IXsCkI0Q_8mtc_DUEgCkkbn8EXlGRgl-cmk4f3bV8" />
     
     <style>
         
@@ -262,7 +261,7 @@ if st.session_state.resultats_recherche:
             elif "agreg externe chimie" in nom_comparaison:
                 lien_sujet = "https://agregation-chimie.fr/index.php/les-epreuves-ecrites/annales-des-epreuves-ecrites"
             elif "capes" in nom_comparaison:
-                lien_sujet = "http://b.louchart.free.fr/Concours_et_examens/CAPES/CAPES_externe_Physique_Chimie/Sujets_et_corriges_ecrits.htmls"
+                lien_sujet = "http://b.louchart.free.fr/Concours_et_examens/CAPES/CAPES_externe_Physique_Chimie/Sujets_et_corriges_ecrits.html"
             elif "agreg interne" in nom_comparaison:
                 lien_sujet = "http://www.agregation-interne-physique-chimie.org/annales-des-eacutepreuves-eacutecrites.html"
             elif "ccp" in nom_comparaison:
