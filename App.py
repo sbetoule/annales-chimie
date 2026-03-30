@@ -180,8 +180,8 @@ with st.sidebar:
     st.subheader("Concours")
     categories_choisies = st.multiselect(
         "Filtrer par type :",
-        options=["CPGE", "Enseignement (Agreg / CAPES)", "IChO"],
-        default=["CPGE", "Enseignement (Agreg / CAPES)", "IChO"]
+        options=["CPGE", "Agreg / CAPES", "IChO"],
+        default=["CPGE", "Agreg / CAPES", "IChO"]
     )
     st.divider()
     criteres = []
