@@ -312,20 +312,4 @@ if st.session_state.resultats_recherche:
             st.dataframe(r['questions'].style.apply(highlight_rows, axis=1), use_container_width=True, hide_index=True)
 
 elif st.session_state.resultats_recherche == []:
-    st.markdown("---")
-    col_a, col_b = st.columns([1, 3])
-    
-    with col_a:
-        st.markdown("<h1 style='font-size: 4rem; margin:0;'>🔍</h1>", unsafe_allow_html=True)
-    
-    with col_b:
-        st.subheader("Aucun sujet correspondant à ces critères.")
-        st.write("La base de données est riche, mais votre combinaison actuelle est très spécifique.")
-        
-        st.info("""
-        **Conseils pour trouver des résultats :**
-        * 📉 **Élargissez la difficulté** : Certains sujets sont classés uniquement en 'moyen' ou 'difficile'.
-        * 🔢 **Réduisez la quantité min.** : Essayez de demander seulement **1 ou 2** questions pour ce thème.
-        * 🏆 **Vérifiez les catégories** : Assurez-vous que 'CPGE' ou 'Enseignement' est bien coché dans la barre latérale.
-        * 🏗️ **Thème précis** : Vérifiez que le thème choisi n'est pas trop restrictif.
-        """)
+    st.warning("Aucun résultat correspondant à la recherche, essayez d'élargir les critères.")
