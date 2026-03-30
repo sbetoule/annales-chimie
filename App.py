@@ -2,7 +2,20 @@ import streamlit as st
 import pandas as pd
 
 # Configuration de la page
-st.set_page_config(page_title="Annales Lab Chimie", layout="wide")
+st.set_page_config(
+    page_title="Annales Lab Chimie",
+    page_icon="🧪",
+    layout="wide",
+    menu_items={
+        'Get Help': None,
+        'Report a bug': None,
+        'About': """
+            # Annales Lab Chimie
+            Outil de recherche d'annales de chimie (CPGE, Agrégation, CAPES, IChO).
+            Développé par Sylvain Betoule, Ulysse Garnier et Morgane Leite.
+        """
+    }
+)
 
 # --- STYLE CSS (LOGO, CRÉDITS, ANIMATION MOBILE) ---
 st.markdown("""
@@ -130,7 +143,7 @@ def charger_donnees(url):
 # --- AFFICHAGE ---
 st.markdown("""
 <div class="credits-compact">
-    <span class="credits-qsn">Qui sommes-nous ?</span>
+    <span class="credits-qsn">Développé par </span>
     <b>Sylvain Betoule</b> (Doctorant, Sorbonne Univ.) • 
     <b>Ulysse Garnier</b> (Doctorant, Sorbonne Univ.) • 
     <b>Morgane Leite</b> (Resp. prépa agrégation de chimie, ENS)
