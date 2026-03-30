@@ -15,9 +15,6 @@ st.set_page_config(
             Développé par Sylvain Betoule, Ulysse Garnier et Morgane Leite.
         """
     })
-st.markdown('<meta name="google-site-verification" content="P0IXsCkI0Q_8mtc_DUEgCkkbn8EXlGRgl-cmk4f3bV8" />', unsafe_allow_html=True)
-# Texte invisible pour aider le SEO de Google
-st.markdown("<h1 style='display:none;'>Annales Chimie CPGE PC BCPST CAPES Agrégation IChO E3A CCP Mines Centrale X ENS</h1>", unsafe_allow_html=True)
 # --- STYLE CSS (LOGO, CRÉDITS, ANIMATION MOBILE) ---
 st.markdown("""
     <link rel="preconnect" href="https://fonts.googleapis.com">
