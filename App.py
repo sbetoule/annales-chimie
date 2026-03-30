@@ -177,13 +177,11 @@ def classifier_concours(nom_sujet):
 with st.sidebar:
     st.header("⚙️ Filtres")
     # --- NOUVEAU FILTRE CONCOURS ---
-    st.subheader("Concours")
     categories_choisies = st.multiselect(
-        "Filtrer par type :",
+        "Type de concours :",
         options=["CPGE", "Agreg / CAPES", "IChO"],
         default=["CPGE", "Agreg / CAPES", "IChO"]
     )
-    st.divider()
     criteres = []
     niveaux_lower = [n.lower().strip() for n in NIVEAUX_ORDRE]
     try: s_idx, e_idx = niveaux_lower.index("facile"), niveaux_lower.index("difficile")
