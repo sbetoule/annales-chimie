@@ -145,8 +145,8 @@ st.markdown("""
     <b>Ulysse Garnier</b> (Doctorant, Sorbonne Univ.) • 
     <b>Morgane Leite</b> (Resp. prépa agrégation de chimie, ENS) • 
     <a href="mailto:sylvain.betoule@gmail.com?subject=Annales%20Lab%20Chimie" 
-       style="color: #fc6076; text-decoration: none; font-weight: bold; font-size: 0.85rem; margin-left: 5px;">
-       📩 Nous contacter
+       style="color: #2c3e50; text-decoration: none; font-weight: bold; font-size: 0.85rem; margin-left: 5px;">
+       📩 Contact
     </a>
 </div>
 """, unsafe_allow_html=True)
