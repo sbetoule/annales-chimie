@@ -237,14 +237,20 @@ if st.session_state.resultats_recherche:
             # --- LOGIQUE DU LIEN ---
             nom_comparaison = r['nom'].lower()
             lien_sujet = None
-            if "présélection icho" in nom_comparaison:
+            if "icho - présélection" in nom_comparaison:
                 lien_sujet = "https://www.sciencesalecole.org/olympiades-internationales-de-chimie-ressources/"
-            elif "agrégation externe spéciale" in nom_comparaison:
+            elif "agreg externe spéciale chimie" in nom_comparaison:
                 lien_sujet = "https://agregation-chimie.fr/index.php/composition-de-physique-chimie/annales-des-epreuves-ecrites"
-            elif "agrégation externe" in nom_comparaison:
+            elif "agreg externe spéciale physique" in nom_comparaison:
+                lien_sujet = "https://docteurs.agregation-physique.org/sc2019-3/"
+            elif "agreg externe physique" in nom_comparaison:
+                lien_sujet = "https://nc.agregation-physique.org/index.php/s/XzZWHcEfQjWwD8f"
+            elif "agreg externe chimie" in nom_comparaison:
                 lien_sujet = "https://agregation-chimie.fr/index.php/les-epreuves-ecrites/annales-des-epreuves-ecrites"
             elif "capes" in nom_comparaison:
                 lien_sujet = "http://b.louchart.free.fr/Concours_et_examens/CAPES/CAPES_externe_Physique_Chimie/Sujets_et_corriges_ecrits.htmls"
+            elif "agreg interne" in nom_comparaison:
+                lien_sujet = "http://www.agregation-interne-physique-chimie.org/annales-des-eacutepreuves-eacutecrites.html"
 
             if lien_sujet:
                 st.link_button("📄 Lien vers le sujet", lien_sujet, type="secondary")
