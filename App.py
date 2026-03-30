@@ -157,7 +157,7 @@ st.markdown("""
         <p class="logo-sub-dynamic">Trouvez le sujet sur mesure</p>
     </div>
     """, unsafe_allow_html=True)
-
+st.markdown("<h1 style='display:none;'>Annales Chimie CPGE PC BCPST CAPES Agrégation IChO E3A CCP Mines Centrale X ENS</h1>", unsafe_allow_html=True)
 with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
     c1, c2, c3 = st.columns(3)
     with c1:
