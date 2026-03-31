@@ -145,6 +145,7 @@ if data_full:
     toutes_annees = sorted(list(set([int(s['annee']) for s in data_full])), reverse=True)
     annee_max_data = max(toutes_annees)
     annee_min_data = min(toutes_annees)
+    liste_annees_desc = list(range(annee_max_absolue, annee_min_absolue - 1, -1))
 # --- AFFICHAGE ---
 st.markdown("""
 <div class="credits-compact">
@@ -193,13 +194,13 @@ with st.sidebar:
         default=["CPGE", "Agreg / CAPES", "IChO"]
     )
     st.write("Période :")
-    start_default = annee_max_data
-    end_default = annee_min_data
+    borne_gauche = annee_max_absolue
+    borne_droite = annee_min_absolue
 
     periode = st.select_slider(
         "Sélectionnez l'intervalle d'années",
-        options=sorted(toutes_annees), # Du plus vieux au plus récent pour le slider
-        value=(start_default, end_default),
+        options=liste_annees_desc, 
+        value=(borne_gauche, borne_droite),
         label_visibility="collapsed"
     )
     st.divider() # Un petit trait pour séparer des filtres thématiques
@@ -242,7 +243,9 @@ if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container
             if categorie_sujet not in categories_choisies:
                 continue 
             annee_sujet = int(s['annee'])
-            if not (periode[1] <= annee_sujet <= periode[0]):
+            annee_debut = min(periode_choisie)
+            annee_fin = max(periode_choisie)
+            if not (annee_debut <= annee_sujet <= annee_fin):
                 continue
             q = s['questions']
             valid = True # Par défaut valide (important pour le cas 0 filtre)
