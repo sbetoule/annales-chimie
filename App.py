@@ -346,9 +346,9 @@ if st.session_state.resultats_recherche:
                     # On crée une ligne dont le thème est un caractère de séparation
                     separateur = pd.Series({
                         'Numéro': "_",
-                        'Thème': "", 
-                        'Difficulté': "", 
-                        'Remarque': ""
+                        'Thème': "_", 
+                        'Difficulté': "_", 
+                        'Remarque': "_"
                     })
                     lignes_avec_separateurs.append(separateur)
 
