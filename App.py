@@ -204,15 +204,16 @@ with st.sidebar:
 
     if st.session_state.nb_filtres == 0:
         st.info("💡 Aucun filtre thématique actif.")
-
-    if st.button("➕ Filtre thématique", use_container_width=True): 
+    
+    label_plus = "➕ Filtre thématique" if st.session_state.nb_filtres == 0 else "➕ Filtre supplémentaire"
+    if st.button(label_plus, use_container_width=True): 
         st.session_state.nb_filtres += 1
         st.rerun()
-        
-    # On autorise la suppression même s'il ne reste qu'un filtre (pour passer à 0)
-    if st.button("🗑️ Retirer le dernier filtre", use_container_width=True) and st.session_state.nb_filtres > 0: 
-        st.session_state.nb_filtres -= 1
-        st.rerun()
+    if st.session_state.nb_filtres > 0:
+        if st.button("🗑️ Retirer le dernier filtre", use_container_width=True): 
+            st.session_state.nb_filtres -= 1
+            st.rerun()
+   
 if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container_width=True):
     if 'sujet_selectionne' in st.session_state:
         del st.session_state.sujet_selectionne
@@ -269,7 +270,8 @@ if st.session_state.resultats_recherche:
     for idx, r in enumerate(st.session_state.resultats_recherche):
         # On utilise une flèche ou un séparateur pour bien distinguer les deux parties
         # Le gras de l'expander s'appliquera, mais la séparation sera nette
-        titre_header = f"📄 {r['nom']} ({r['annee']})  |  {r['stats']}"
+        stats_info = f"  |  {r['stats']}" if r['stats'] else ""
+        titre_header = f"📄 {r['nom']} ({r['annee']}){stats_info}"
         
         with st.expander(titre_header):
             # --- LOGIQUE DU LIEN ---
