@@ -187,27 +187,35 @@ with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
     with c3:
         st.markdown("**3. Analyse**"); st.info("⬇️ Les questions ciblées apparaîtront en bleu dans les détails et les changements de partie en gris.")
     st.markdown("<p class='cpge-warning'>⚠️ La liste des thématiques correspond au contenu des programmes de CPGE. Des niveaux de difficulté sont indiqués par rapport à un élève de CPGE. Ces derniers sont purement indicatifs et propres à l'interprétation des concepteurs de ce site.</p>", unsafe_allow_html=True)
-    descriptions_themes = {
-        "Thermodynamique": "Étude des transferts d'énergie, premier et second principes, grandeurs d'état et équilibres chimiques. Niveau : PCSI/BCPST/MP.",
-        "Cinétique chimique": "Vitesse de réaction, lois de vitesse, mécanismes réactionnels (étapes élémentaires, AEQS). Niveau : Toutes filières.",
-        "Chimie Organique": "Réactivité des fonctions, mécanismes (SN, E, Addition), stéréochimie et stratégies de synthèse. Niveau : PC/BCPST.",
-        "Solution aqueuse": "Équilibres acido-basiques, complexation, précipitation et diagrammes de distribution. Niveau : Toutes filières."
+    descriptions_themes = # --- SECTION RÉFÉRENTIEL DES THÈMES ---
+    # (Tu peux enrichir ce dictionnaire ou le charger via un CSV)
+    desc_themes = {
+        "Acides / Bases": "Équilibres pH-métriques, calculs de pH, titrages et solutions tampons.",
+        "Cinétique chimique": "Ordre de réaction, loi d'Arrhenius et mécanismes réactionnels.",
+        "Chimie Organique (Généralités)": "Stéréochimie, effets électroniques et nomenclature.",
+        "Thermodynamique": "Premier et second principes, enthalpies de réaction et équilibres."
     }
 
-    # 2. Affichage de l'outil de consultation
-    st.markdown("🔍 **Détail des thématiques**")
-    col_theme, col_desc = st.columns([1, 2]) # Ratio 1/3 - 2/3 pour rester compact
+    st.write("") # Petit espacement
     
-    with col_theme:
-        theme_select = st.selectbox(
-            "Choisir un thème pour voir le détail :",
-            options=list(descriptions_themes.keys()),
-            label_visibility="collapsed" # Cache le label pour gagner de la place
+    # Création de 3 colonnes : Label (25%), Selectbox (25%), Description (50%)
+    col_label, col_sel, col_txt = st.columns([1, 1, 2])
+
+    with col_label:
+        st.markdown("<p style='margin-top:10px;'>🔍 <b>Détails des thématiques :</b></p>", unsafe_allow_html=True)
+
+    with col_sel:
+        # On utilise label_visibility="collapsed" pour ne pas décaler la ligne
+        theme_ref = st.selectbox(
+            "Référentiel", 
+            options=list(desc_themes.keys()), 
+            label_visibility="collapsed"
         )
-    
-    with col_desc:
-        if theme_select:
-            st.info(descriptions_themes[theme_select])
+
+    with col_txt:
+        if theme_ref:
+            # st.caption ou st.markdown pour un texte discret mais lisible
+            st.markdown(f"<p style='margin-top:10px; color:#555;'><i>{desc_themes[theme_ref]}</i></p>", unsafe_allow_html=True)
 # --- BARRE LATÉRALE ---
 def classifier_concours(nom_sujet):
     nom = str(nom_sujet).upper()
