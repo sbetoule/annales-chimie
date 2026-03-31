@@ -327,48 +327,61 @@ if st.session_state.resultats_recherche:
 
             if lien_sujet:
                 st.link_button("🔗 Lien vers le sujet", lien_sujet, type="secondary")
-            # --- NOUVELLE FONCTION DE STYLE AVEC SÉPARATEUR ---
-            def apply_custom_styles(row):
-                # 1. Styles par défaut
-                styles = [''] * len(row)
+            with st.expander(titre_header):
+            # ... (votre code pour le lien_sujet)
+
+            # 1. PRÉPARATION DES DONNÉES AVEC LIGNES DE SÉPARATION
+            questions_originales = r['questions'].copy()
+            lignes_avec_separateurs = []
+            
+            for _, row in questions_originales.iterrows():
+                val_num = str(row['Numéro']).lower().strip()
+                is_end = val_num.endswith("end")
                 
-                # 2. Détection de "end" (insensible à la casse et aux espaces)
-                numero_str = str(row['Numéro']).lower().strip()
-                is_end_of_part = numero_str.endswith("end")
+                # On nettoie le numéro pour l'affichage
+                row_copie = row.copy()
+                row_copie['Numéro'] = str(row['Numéro']).replace("end", "").replace("END", "").strip()
+                lignes_avec_separateurs.append(row_copie)
                 
-                # 3. Logique de surbrillance thématique (votre code existant)
+                # Si c'est une fin de partie, on injecte une ligne "barrière"
+                if is_end:
+                    # On crée une ligne dont le thème est un caractère de séparation
+                    separateur = pd.Series({
+                        'Numéro': "—", 
+                        'Thème': "—" * 10, 
+                        'Difficulté': "—", 
+                        'Remarque': "—"
+                    })
+                    lignes_avec_separateurs.append(separateur)
+
+            df_final = pd.DataFrame(lignes_avec_separateurs)
+
+            # 2. FONCTION DE STYLE MISE À JOUR
+            def style_separateurs(row):
+                # Si c'est notre ligne de séparation (contient le tiret)
+                if row['Numéro'] == "—":
+                    return ['background-color: #2c3e50; color: #2c3e50; font-size: 1px; height: 5px'] * len(row)
+                
+                # Sinon, logique de surbrillance classique
                 is_highlighted = False
                 for c in criteres:
                     try:
                         i_min, i_max = NIVEAUX_ORDRE.index(c['diff_range'][0]), NIVEAUX_ORDRE.index(c['diff_range'][1])
-                        n_acc = NIVEAUX_ORDRE[i_min : i_max + 1]
-                    except: n_acc = NIVEAUX_ORDRE
+                        n_acc = [n.lower().strip() for n in NIVEAUX_ORDRE[i_min : i_max + 1]]
+                    except: n_acc = [n.lower().strip() for n in NIVEAUX_ORDRE]
                     
-                    if c['theme'].lower() in str(row['Thème']).lower() and str(row['Difficulté']).strip() in n_acc:
+                    if c['theme'].lower() in str(row['Thème']).lower() and str(row['Difficulté']).strip().lower() in n_acc:
                         is_highlighted = True
                         break
-
-                # 4. Application des styles CSS
-                row_style = ""
-                if is_highlighted:
-                    row_style += "background-color: #d1e7ff; color: black;"
                 
-                if is_end_of_part:
-                    # On crée une ligne sombre épaisse en bas de la cellule via une ombre portée interne
-                    row_style += "box-shadow: inset 0 -3px 0 0 #2c3e50 !important;"
+                if is_highlighted:
+                    return ['background-color: #d1e7ff; color: black'] * len(row)
+                return [''] * len(row)
 
-                return [row_style] * len(row)
-
-            # --- NETTOYAGE DU NUMÉRO POUR L'AFFICHAGE ---
-            # On crée une copie pour ne pas modifier les données sources
-            df_propre = r['questions'].copy()
-            # On retire "end" (et les espaces autour) pour l'affichage final dans le tableau
-            df_propre['Numéro'] = df_propre['Numéro'].astype(str).str.replace(r'\s*[eE][nN][dD]$', '', regex=True)
-
-            # Affichage du tableau stylisé
+            # 3. AFFICHAGE
             st.dataframe(
-                df_propre.style.apply(apply_custom_styles, axis=1), 
-                use_container_width=True, 
+                df_final.style.apply(style_separateurs, axis=1),
+                use_container_width=True,
                 hide_index=True
             )
 
