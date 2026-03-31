@@ -422,8 +422,8 @@ if st.session_state.resultats_recherche:
                 # Si c'est une fin de partie, on injecte la ligne "Changement de Partie"
                 if is_end:
                     separateur = pd.Series({
-                        'Numéro': "───"*20, 
-                        'Thème':"·  ·  ·  ·  ·  ·  · " * 30,
+                        'Numéro': "─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─"*20, 
+                        'Thème': "─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─"*20,
                         'Difficulté': "·  ·  ·  ·  ·  ·  · " * 30,
                         'Remarque': "───"*20
                     })
