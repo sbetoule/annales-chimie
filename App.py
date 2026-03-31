@@ -201,8 +201,7 @@ with st.sidebar:
         "Sélectionnez l'intervalle d'années",
         options=liste_annees_desc, 
         value=(borne_gauche, borne_droite),
-        label_visibility="collapsed"
-    )
+        )
     criteres = []
     niveaux_lower = [n.lower().strip() for n in NIVEAUX_ORDRE]
     try: s_idx, e_idx = niveaux_lower.index("facile"), niveaux_lower.index("difficile")
