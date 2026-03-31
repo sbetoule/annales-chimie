@@ -420,12 +420,13 @@ if st.session_state.resultats_recherche:
                 lignes_avec_separateurs.append(row_copie)
                 
                 # Si c'est une fin de partie, on injecte la ligne "Changement de Partie"
+                motif = "─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─"
                 if is_end:
                     separateur = pd.Series({
-                        'Numéro': "─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─"*20, 
-                        'Thème': "─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─  ─"*20,
-                        'Difficulté': "·  ·  ·  ·  ·  ·  · " * 30,
-                        'Remarque': "───"*20
+                        'Numéro': motif, 
+                        'Thème': motif,
+                        'Difficulté': motif,
+                        'Remarque': motif
                     })
                     lignes_avec_separateurs.append(separateur)
 
@@ -434,7 +435,7 @@ if st.session_state.resultats_recherche:
                       # 2. FONCTION DE STYLE MISE À JOUR
             def style_separateurs(row):
                 # Si c'est notre ligne de séparation (contient le tiret)
-                if row['Numéro'] == "───"*20:
+                if row['Numéro'] == motif:
                     return ['background-color: #F8F9FB; line-height: 1px; font-size: 1px; height: 2px'] * len(row)
                 
                 # Sinon, logique de surbrillance classique
