@@ -420,7 +420,7 @@ if st.session_state.resultats_recherche:
                 lignes_avec_separateurs.append(row_copie)
                 
                 # Si c'est une fin de partie, on injecte la ligne "Changement de Partie"
-                motif = ". " * 30
+                motif = ". " * 50
                 if is_end:
                     separateur = pd.Series({
                         'Numéro': "───"*20, 
