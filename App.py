@@ -431,19 +431,24 @@ if st.session_state.resultats_recherche:
 
             df_final = pd.DataFrame(lignes_avec_separateurs)
 
-                      # 2. FONCTION DE STYLE MISE À JOUR
+                      # 2. FONCTION DE STYLE MISE À JOUR (avec centrage ciblé)
             def style_separateurs(row):
-                # Style pour la ligne de changement de partie
+                # 1. STYLE POUR LA LIGNE DE CHANGEMENT DE PARTIE
                 if "CHANGEMENT DE PARTIE" in str(row['Thème']):
-                    return [
-                        'background-color: #EEEEEE; ' # Gris clair
-                        'color: #777777; '            # Texte gris foncé
-                        'font-weight: bold; ' 
-                        'font-style: italic; '
-                        'text-align: center;'
-                    ] * len(row)
+                    # Style de base pour toute la ligne
+                    base_style = 'background-color: #EEEEEE; color: #777777; font-weight: bold; font-style: italic;'
+                    
+                    # On crée une liste de styles pour chaque colonne
+                    styles = []
+                    for col in row.index:
+                        if col == 'Thème':
+                            # On ajoute spécifiquement le centrage pour la colonne Thème
+                            styles.append(base_style + ' text-align: center;')
+                        else:
+                            styles.append(base_style)
+                    return styles
                 
-                # Logique de surbrillance classique (Questions trouvées)
+                # 2. LOGIQUE DE SURBRILLANCE CLASSIQUE (Questions trouvées)
                 is_highlighted = False
                 for c in criteres:
                     try:
