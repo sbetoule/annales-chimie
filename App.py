@@ -145,9 +145,6 @@ if data_full:
     toutes_annees = sorted(list(set([int(s['annee']) for s in data_full])), reverse=True)
     annee_max_data = max(toutes_annees)
     annee_min_data = min(toutes_annees)
-else:
-    toutes_annees = [2024]
-    annee_max_data, annee_min_data = 2024, 2000
 # --- AFFICHAGE ---
 st.markdown("""
 <div class="credits-compact">
@@ -196,9 +193,8 @@ with st.sidebar:
         default=["CPGE", "Agreg / CAPES", "IChO"]
     )
     st.write("Période :")
-    # On définit les valeurs par défaut (2024 et 2020) si elles existent dans la liste
-    start_default = 2020 if 2020 in toutes_annees else annee_min_data
-    end_default = 2024 if 2024 in toutes_annees else annee_max_data
+    start_default = annee_max_data
+    end_default = annee_min_data
 
     periode = st.select_slider(
         "Sélectionnez l'intervalle d'années",
@@ -246,7 +242,7 @@ if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container
             if categorie_sujet not in categories_choisies:
                 continue 
             annee_sujet = int(s['annee'])
-            if not (periode[0] <= annee_sujet <= periode[1]):
+            if not (periode[1] <= annee_sujet <= periode[0]):
                 continue
             q = s['questions']
             valid = True # Par défaut valide (important pour le cas 0 filtre)
