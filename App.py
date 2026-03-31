@@ -327,9 +327,7 @@ if st.session_state.resultats_recherche:
 
             if lien_sujet:
                 st.link_button("🔗 Lien vers le sujet", lien_sujet, type="secondary")
-            with st.expander(titre_header):
-            # ... (votre code pour le lien_sujet)
-
+     
             # 1. PRÉPARATION DES DONNÉES AVEC LIGNES DE SÉPARATION
             questions_originales = r['questions'].copy()
             lignes_avec_separateurs = []
