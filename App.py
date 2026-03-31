@@ -201,7 +201,7 @@ with st.sidebar:
         options=liste_annees_desc, 
         value=(borne_gauche, borne_droite),
         )
-
+    st.divider()
     regrouper_par_partie = False 
     if st.session_state.nb_filtres > 0:
         regrouper_par_partie = st.checkbox(
