@@ -215,7 +215,7 @@ with st.sidebar:
     regrouper_par_partie = False 
     if st.session_state.nb_filtres > 0:
         regrouper_par_partie = st.checkbox(
-            "🎯 Les questions vérifiant les critères ci-dessous doivent apparaître dans la même partie du sujet", 
+            "🎯 Je souhaite que les questions vérifiant ces critères apparaissent dans la même partie du sujet", 
             value=False)
     
     criteres = []
