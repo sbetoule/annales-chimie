@@ -419,11 +419,11 @@ if st.session_state.resultats_recherche:
                 row_copie['Numéro'] = str(row['Numéro']).replace("end", "").replace("END", "").strip()
                 lignes_avec_separateurs.append(row_copie)
                 
-                # Si c'est une fin de partie, on injecte une ligne "barrière"
+                # Si c'est une fin de partie, on injecte la ligne "Changement de Partie"
                 if is_end:
                     separateur = pd.Series({
                         'Numéro': "—", 
-                        'Thème': "—", 
+                        'Thème': "─── Changement de partie ───", # Texte personnalisé
                         'Difficulté': "—", 
                         'Remarque': "—"
                     })
