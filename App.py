@@ -119,7 +119,7 @@ with st.spinner("Initialisation des thématiques..."):
     THEMES_LISTE, NIVEAUX_ORDRE = recuperer_listes(URL_THEMES, URL_NIVEAUX)
 
 if 'resultats_recherche' not in st.session_state: st.session_state.resultats_recherche = None
-if 'nb_filtres' not in st.session_state: st.session_state.nb_filtres = 1
+if 'nb_filtres' not in st.session_state: st.session_state.nb_filtres = 0
 default_theme_index = 3
 
 @st.cache_data(ttl=30)
@@ -163,8 +163,7 @@ st.markdown("""
 with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
     c1, c2, c3 = st.columns(3)
     with c1:
-        st.markdown("**1. Filtres**"); st.info("""⬅️ Utilisez la barre latérale pour vos thèmes. 
-        *Pour voir tous les sujets d'un concours sans filtre, cliquez sur **Retirer le dernier filtre**.*""")
+        st.markdown("**1. Filtres**"); st.info("""⬅️ Utilisez la barre latérale pour sélectionner vos thèmes.""")
     with c2:
         st.markdown("**2. Recherche**"); st.info("Cliquez sur le bouton 🔎 **Lancer la recherche**.")
     with c3:
@@ -206,7 +205,7 @@ with st.sidebar:
     if st.session_state.nb_filtres == 0:
         st.info("💡 Aucun filtre thématique actif.")
 
-    if st.button("➕ Filtre supplémentaire", use_container_width=True): 
+    if st.button("➕ Filtre thématique", use_container_width=True): 
         st.session_state.nb_filtres += 1
         st.rerun()
         
