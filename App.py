@@ -433,11 +433,7 @@ if st.session_state.resultats_recherche:
             df_final = pd.DataFrame(lignes_avec_separateurs)
 
                       # 2. FONCTION DE STYLE MISE À JOUR
-            def style_separateurs(row):
-                # Si c'est notre ligne de séparation (contient le tiret)
-                if row['Numéro'] == motif:
-                    return ['background-color: #F8F9FB; line-height: 1px; font-size: 1px; height: 2px'] * len(row)
-                
+            def style_separateurs(row):                
                 # Sinon, logique de surbrillance classique
                 is_highlighted = False
                 for c in criteres:
