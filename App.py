@@ -423,7 +423,7 @@ if st.session_state.resultats_recherche:
                 if is_end:
                     separateur = pd.Series({
                         'Numéro': "—", 
-                        'Thème': "─── Changement de partie ───", # Texte personnalisé
+                        'Thème': "───"*50,
                         'Difficulté': "—", 
                         'Remarque': "—"
                     })
@@ -431,24 +431,13 @@ if st.session_state.resultats_recherche:
 
             df_final = pd.DataFrame(lignes_avec_separateurs)
 
-                      # 2. FONCTION DE STYLE MISE À JOUR (avec centrage ciblé)
+                      # 2. FONCTION DE STYLE MISE À JOUR
             def style_separateurs(row):
-                # 1. STYLE POUR LA LIGNE DE CHANGEMENT DE PARTIE
-                if "CHANGEMENT DE PARTIE" in str(row['Thème']):
-                    # Style de base pour toute la ligne
-                    base_style = 'background-color: #EEEEEE; color: #777777; font-weight: bold; font-style: italic;'
-                    
-                    # On crée une liste de styles pour chaque colonne
-                    styles = []
-                    for col in row.index:
-                        if col == 'Thème':
-                            # On ajoute spécifiquement le centrage pour la colonne Thème
-                            styles.append(base_style + ' text-align: center;')
-                        else:
-                            styles.append(base_style)
-                    return styles
+                # Si c'est notre ligne de séparation (contient le tiret)
+                if row['Numéro'] == "—":
+                    return ['background-color: #F8F9FB; color: #F8F9FB; line-height: 1px; font-size: 1px; height: 2px'] * len(row)
                 
-                # 2. LOGIQUE DE SURBRILLANCE CLASSIQUE (Questions trouvées)
+                # Sinon, logique de surbrillance classique
                 is_highlighted = False
                 for c in criteres:
                     try:
