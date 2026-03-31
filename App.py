@@ -201,6 +201,13 @@ with st.sidebar:
         options=liste_annees_desc, 
         value=(borne_gauche, borne_droite),
         )
+
+    regrouper_par_partie = False 
+    if st.session_state.nb_filtres > 0:
+        regrouper_par_partie = st.checkbox(
+            "🎯 Les questions vérifiant les critères ci-dessous doivent apparaître dans la même partie du sujet", 
+            value=False)
+    
     criteres = []
     niveaux_lower = [n.lower().strip() for n in NIVEAUX_ORDRE]
     try: s_idx, e_idx = niveaux_lower.index("facile"), niveaux_lower.index("difficile")
@@ -220,11 +227,6 @@ with st.sidebar:
     if st.session_state.nb_filtres == 0:
         st.info("💡 Aucun filtre thématique actif.")
 
-    regrouper_par_partie = False 
-    if st.session_state.nb_filtres > 0:
-        regrouper_par_partie = st.checkbox(
-            "🎯 Les questions vérifiant ces critères doivent apparaître dans la même partie du sujet", 
-            value=False)
     label_plus = "➕ Filtre thématique" if st.session_state.nb_filtres == 0 else "➕ Filtre supplémentaire"
     if st.button(label_plus, use_container_width=True): 
         st.session_state.nb_filtres += 1
