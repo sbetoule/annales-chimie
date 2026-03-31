@@ -357,7 +357,15 @@ if st.session_state.resultats_recherche:
             def style_separateurs(row):
                 # Si c'est notre ligne de séparation (contient le tiret)
                 if row['Numéro'] == "—":
-                    return ['background-color: #f0f2f6; color: #f0f2f6; line-height: 1px; font-size: 1px; height: 2px'] * len(row)
+                    return [
+                        f'background-color: {couleur_fond_header}; '
+                        f'color: #7f8c8d; ' # Gris texte discret
+                        f'font-style: italic; '
+                        f'font-weight: bold; '
+                        f'border-left: none; border-right: none; ' # Supprime les séparateurs verticaux
+                        f'text-align: center; '
+                        f'line-height: 1px; font-size: 10px;'
+                    ] * len(row)
                 
                 # Sinon, logique de surbrillance classique
                 is_highlighted = False
