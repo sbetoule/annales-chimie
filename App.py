@@ -354,8 +354,8 @@ if st.session_state.resultats_recherche:
                     row_style += "background-color: #d1e7ff; color: black;"
                 
                 if is_end_of_part:
-                    # Ajoute une bordure noire marquée en bas de la ligne
-                    row_style += "border-bottom: 3px double #2c3e50 !important;"
+                    # On crée une ligne sombre épaisse en bas de la cellule via une ombre portée interne
+                    row_style += "box-shadow: inset 0 -3px 0 0 #2c3e50 !important;"
 
                 return [row_style] * len(row)
 
