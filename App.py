@@ -22,7 +22,21 @@ st.markdown("""
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@800;900&family=Permanent+Marker&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
+       /* Réduire l'espace global entre les éléments de la sidebar */
+        [data-testid="stSidebarUserContent"] .stElementContainer {
+            margin-bottom: -15px !important;
+        }
+
+        /* Réduire spécifiquement l'espace autour des dividers dans la sidebar */
+        [data-testid="stSidebarUserContent"] hr {
+            margin-top: 5px !important;
+            margin-bottom: 15px !important;
+        }
         
+        /* Ajuster l'espacement du slider */
+        [data-testid="stSidebarUserContent"] .stSlider {
+            padding-bottom: 0px !important;
+        } 
       /* Style de base du texte dans l'expander */
         .stExpander summary p {
             font-size: 0.95rem !important;
