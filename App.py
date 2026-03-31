@@ -198,8 +198,8 @@ with st.sidebar:
         criteres.append({"theme": t, "diff_range": d_range, "min": m})
 
     col1, col2 = st.columns(2)
-    if col1.button("➕ Ajouter"): st.session_state.nb_filtres += 1; st.rerun()
-    if col2.button("🗑️ Effacer") and st.session_state.nb_filtres > 1: st.session_state.nb_filtres -= 1; st.rerun()
+    if col1.button("➕ Filtre supplémentaire"): st.session_state.nb_filtres += 1; st.rerun()
+    if col2.button("🗑️ Retirer le dernier filtre") and st.session_state.nb_filtres > 1: st.session_state.nb_filtres -= 1; st.rerun()
 if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container_width=True):
     if 'sujet_selectionne' in st.session_state:
         del st.session_state.sujet_selectionne
