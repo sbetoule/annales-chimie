@@ -327,19 +327,50 @@ if st.session_state.resultats_recherche:
 
             if lien_sujet:
                 st.link_button("🔗 Lien vers le sujet", lien_sujet, type="secondary")
-
-            # Fonction de surbrillance
-            def highlight_rows(row):
+            # --- NOUVELLE FONCTION DE STYLE AVEC SÉPARATEUR ---
+            def apply_custom_styles(row):
+                # 1. Styles par défaut
+                styles = [''] * len(row)
+                
+                # 2. Détection de "end" (insensible à la casse et aux espaces)
+                numero_str = str(row['Numéro']).lower().strip()
+                is_end_of_part = numero_str.endswith("end")
+                
+                # 3. Logique de surbrillance thématique (votre code existant)
+                is_highlighted = False
                 for c in criteres:
                     try:
                         i_min, i_max = NIVEAUX_ORDRE.index(c['diff_range'][0]), NIVEAUX_ORDRE.index(c['diff_range'][1])
                         n_acc = NIVEAUX_ORDRE[i_min : i_max + 1]
                     except: n_acc = NIVEAUX_ORDRE
+                    
                     if c['theme'].lower() in str(row['Thème']).lower() and str(row['Difficulté']).strip() in n_acc:
-                        return ['background-color: #d1e7ff; color: black'] * len(row)
-                return [''] * len(row)
+                        is_highlighted = True
+                        break
 
-            st.dataframe(r['questions'].style.apply(highlight_rows, axis=1), use_container_width=True, hide_index=True)
+                # 4. Application des styles CSS
+                row_style = ""
+                if is_highlighted:
+                    row_style += "background-color: #d1e7ff; color: black;"
+                
+                if is_end_of_part:
+                    # Ajoute une bordure noire marquée en bas de la ligne
+                    row_style += "border-bottom: 2px solid #2c3e50 !important;"
+
+                return [row_style] * len(row)
+
+            # --- NETTOYAGE DU NUMÉRO POUR L'AFFICHAGE ---
+            # On crée une copie pour ne pas modifier les données sources
+            df_propre = r['questions'].copy()
+            # On retire "end" (et les espaces autour) pour l'affichage final dans le tableau
+            df_propre['Numéro'] = df_propre['Numéro'].astype(str).str.replace(r'\s*[eE][nN][dD]$', '', regex=True)
+
+            # Affichage du tableau stylisé
+            st.dataframe(
+                df_propre.style.apply(apply_custom_styles, axis=1), 
+                use_container_width=True, 
+                hide_index=True
+            )
 
 elif st.session_state.resultats_recherche == []:
     st.warning("Aucun résultat correspondant à la recherche, essayez d'élargir les critères.")
