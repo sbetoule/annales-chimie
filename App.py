@@ -265,30 +265,33 @@ if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container
                 if debut_idx < len(q): # Ajoute la dernière partie si pas de "end"
                     parties.append(q.iloc[debut_idx:])
 
-                # 2. Vérification : CHAQUE critère doit être satisfait dans AU MOINS UNE partie (pas forcément la même pour tous)
-                # OU si vous voulez que TOUS les critères soient dans la MÊME partie :
-                sujet_valide_par_bloc = True
+                # 2. Vérification : Il doit exister au moins UNE partie qui satisfait TOUS les critères
+                sujet_valide_par_bloc = False
                 
-                for c in criteres:
-                    theme_recherche = str(c['theme']).strip().lower()
-                    try:
-                        idx_start = NIVEAUX_ORDRE.index(c['diff_range'][0])
-                        idx_end = NIVEAUX_ORDRE.index(c['diff_range'][1])
-                        n_acc = [n.lower().strip() for n in NIVEAUX_ORDRE[idx_start : idx_end + 1]]
-                    except: n_acc = [n.lower().strip() for n in NIVEAUX_ORDRE]
+                for p in parties:
+                    tous_criteres_dans_cette_partie = True
+                    
+                    for c in criteres:
+                        theme_recherche = str(c['theme']).strip().lower()
+                        try:
+                            idx_start = NIVEAUX_ORDRE.index(c['diff_range'][0])
+                            idx_end = NIVEAUX_ORDRE.index(c['diff_range'][1])
+                            n_acc = [n.lower().strip() for n in NIVEAUX_ORDRE[idx_start : idx_end + 1]]
+                        except: 
+                            n_acc = [n.lower().strip() for n in NIVEAUX_ORDRE]
 
-                    # On cherche si une partie au moins contient le quota
-                    critere_satisfait_quelque_part = False
-                    for p in parties:
+                        # On vérifie si CETTE partie 'p' contient le quota pour CE critère 'c'
                         mask_p = p['Thème'].astype(str).str.lower().str.contains(theme_recherche, na=False) & \
                                  p['Difficulté'].astype(str).str.lower().str.strip().isin(n_acc)
-                        if len(p[mask_p]) >= c['min']:
-                            critere_satisfait_quelque_part = True
-                            break
+                        
+                        if len(p[mask_p]) < c['min']:
+                            tous_criteres_dans_cette_partie = False
+                            break # On sort de la boucle des critères, cette partie ne convient pas
                     
-                    if not critere_satisfait_quelque_part:
-                        sujet_valide_par_bloc = False
-                        break
+                    if tous_criteres_dans_cette_partie:
+                        sujet_valide_par_bloc = True
+                        break # On a trouvé une partie qui match tout, on peut valider le sujet
+                
                 valid = sujet_valide_par_bloc
 
             else:
