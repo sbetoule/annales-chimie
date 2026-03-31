@@ -422,7 +422,7 @@ if st.session_state.resultats_recherche:
                 # Si c'est une fin de partie, on injecte la ligne "Changement de Partie"
                 if is_end:
                     separateur = pd.Series({
-                        'Numéro': "—", 
+                        'Numéro': "Nouvelle partie", 
                         'Thème': "───"*50,
                         'Difficulté': "—", 
                         'Remarque': "—"
