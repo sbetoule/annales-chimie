@@ -325,8 +325,10 @@ if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container
                         break
 
             if valid:
+                # --- NOUVELLE LOGIQUE DE FUSION DES STATS ---
+                stats_map = {} # Dictionnaire pour cumuler les comptes par thème
+                
                 for c in criteres:
-                    # On définit la plage de difficulté acceptée pour ce critère précis
                     try:
                         idx_s = NIVEAUX_ORDRE.index(c['diff_range'][0])
                         idx_e = NIVEAUX_ORDRE.index(c['diff_range'][1])
@@ -334,14 +336,22 @@ if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container
                     except:
                         n_criteres_acc = [n.lower().strip() for n in NIVEAUX_ORDRE]
                     
-                    # Comptage sur TOUTES les questions du sujet
+                    # On calcule le masque pour ce critère précis
                     mask_stat = q['Thème'].astype(str).str.lower().str.contains(str(c['theme']).lower(), na=False) & \
                                 q['Difficulté'].astype(str).str.lower().str.strip().isin(n_criteres_acc)
                     
-                    count = len(q[mask_stat])
-                    stats.append(f"{c['theme']} ({count})")
+                    # On récupère les indices des questions qui matchent
+                    indices_match = q[mask_stat].index.tolist()
+                    
+                    # On ajoute ces indices au set du thème (le set gère l'union A U B automatiquement)
+                    theme_nom = str(c['theme'])
+                    if theme_nom not in stats_map:
+                        stats_map[theme_nom] = set()
+                    stats_map[theme_nom].update(indices_match)
                 
-                s['stats'] = " | ".join(stats) if stats else ""
+                # On transforme le dictionnaire en liste de chaînes "Thème (Total)"
+                stats_list = [f"{t} ({len(indices)})" for t, indices in stats_map.items()]
+                s['stats'] = " | ".join(stats_list) if stats_list else ""
                 trouves.append(s)
                 
         # --- NOUVEAU SYSTÈME DE TRI ---
