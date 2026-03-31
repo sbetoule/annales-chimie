@@ -163,7 +163,8 @@ st.markdown("""
 with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
     c1, c2, c3 = st.columns(3)
     with c1:
-        st.markdown("**1. Filtres**"); st.info("⬅️ Utilisez la barre latérale pour choisir vos thèmes.")
+        st.markdown("**1. Filtres**"); st.info("⬅️ Utilisez la barre latérale pour vos thèmes. 
+        *Pour voir tous les sujets d'un concours sans filtre, cliquez sur **"Retirer le dernier filtre"**.*")
     with c2:
         st.markdown("**2. Recherche**"); st.info("Cliquez sur le bouton 🔎 **Lancer la recherche**.")
     with c3:
@@ -253,7 +254,7 @@ if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container
 
             if valid:
                 # Si pas de critères, on met un texte vide pour les stats
-                s['stats'] = " | ".join(stats) if stats else "Vue d'ensemble"
+                s['stats'] = " | ".join(stats) if stats else ""
                 trouves.append(s)
                 
         # --- NOUVEAU SYSTÈME DE TRI ---
