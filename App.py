@@ -145,7 +145,7 @@ if data_full:
     toutes_annees = sorted(list(set([int(s['annee']) for s in data_full])), reverse=True)
     annee_max_data = max(toutes_annees)
     annee_min_data = min(toutes_annees)
-    liste_annees_desc = list(range(annee_max_absolue, annee_min_absolue - 1, -1))
+    liste_annees_desc = list(range(annee_max_data, annee_min_data - 1, -1))
 # --- AFFICHAGE ---
 st.markdown("""
 <div class="credits-compact">
