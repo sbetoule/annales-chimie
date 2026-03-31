@@ -293,7 +293,7 @@ if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container
                             n_acc = [n.lower().strip() for n in NIVEAUX_ORDRE]
 
                         # On vérifie si CETTE partie 'p' contient le quota pour CE critère 'c'
-                        mask_p = p['Thème'].astype(str).str.lower().str.contains(theme_recherche, na=False) & \
+                        mask_p = p['Thème'].astype(str).str.lower().str.contains(theme_recherche, regex=False, na=False) & \
                                  p['Difficulté'].astype(str).str.lower().str.strip().isin(n_acc)
                         
                         if len(p[mask_p]) < c['min']:
@@ -337,7 +337,7 @@ if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container
                         n_criteres_acc = [n.lower().strip() for n in NIVEAUX_ORDRE]
                     
                     # On calcule le masque pour ce critère précis
-                    mask_stat = q['Thème'].astype(str).str.lower().str.contains(str(c['theme']).lower(), na=False) & \
+                    mask_stat = q['Thème'].astype(str).str.lower().str.contains(str(c['theme']).lower(), regex=False, na=False) & \
                                 q['Difficulté'].astype(str).str.lower().str.strip().isin(n_criteres_acc)
                     
                     # On récupère les indices des questions qui matchent
