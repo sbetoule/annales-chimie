@@ -120,6 +120,7 @@ with st.spinner("Initialisation des thématiques..."):
 
 if 'resultats_recherche' not in st.session_state: st.session_state.resultats_recherche = None
 if 'nb_filtres' not in st.session_state: st.session_state.nb_filtres = 1
+default_theme_index = 3
 
 @st.cache_data(ttl=30)
 def charger_donnees(url):
@@ -179,28 +180,37 @@ def classifier_concours(nom_sujet):
     return "CPGE"
 with st.sidebar:
     st.header("⚙️ Filtres")
-    # --- NOUVEAU FILTRE CONCOURS ---
     categories_choisies = st.multiselect(
         "Type de concours :",
         options=["CPGE", "Agreg / CAPES", "IChO"],
         default=["CPGE", "Agreg / CAPES", "IChO"]
     )
+    
     criteres = []
     niveaux_lower = [n.lower().strip() for n in NIVEAUX_ORDRE]
     try: s_idx, e_idx = niveaux_lower.index("facile"), niveaux_lower.index("difficile")
     except: s_idx, e_idx = 0, len(NIVEAUX_ORDRE) - 1
 
+    # Affichage des filtres thématiques uniquement si nb_filtres > 0
     for n in range(st.session_state.nb_filtres):
         if n > 0: st.divider()
-        t = st.selectbox(f"Thème", THEMES_LISTE, key=f"t_{n}")
+        # On utilise l'index 3 (4ème thème) pour le premier filtre, 0 pour les autres
+        current_default = default_theme_index if n == 0 else 0
+        
+        t = st.selectbox(f"Thème", THEMES_LISTE, index=current_default, key=f"t_{n}")
         d_range = st.select_slider(f"Difficulté", options=NIVEAUX_ORDRE, value=(NIVEAUX_ORDRE[s_idx], NIVEAUX_ORDRE[e_idx]), key=f"d_{n}")
         m = st.number_input(f"Quantité min.", min_value=1, value=1, key=f"m_{n}")
         criteres.append({"theme": t, "diff_range": d_range, "min": m})
 
+    if st.session_state.nb_filtres == 0:
+        st.info("💡 Aucun filtre thématique actif.")
+
     if st.button("➕ Filtre supplémentaire", use_container_width=True): 
         st.session_state.nb_filtres += 1
         st.rerun()
-    if st.button("🗑️ Retirer le dernier filtre", use_container_width=True) and st.session_state.nb_filtres > 1: 
+        
+    # On autorise la suppression même s'il ne reste qu'un filtre (pour passer à 0)
+    if st.button("🗑️ Retirer le dernier filtre", use_container_width=True) and st.session_state.nb_filtres > 0: 
         st.session_state.nb_filtres -= 1
         st.rerun()
 if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container_width=True):
@@ -210,25 +220,20 @@ if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container
         data = charger_donnees(URL_CSV)
         trouves = []
         for s in data:
-            # 1. Vérification de la catégorie d'abord
             categorie_sujet = classifier_concours(s['nom'])
             if categorie_sujet not in categories_choisies:
-                continue # On passe au sujet suivant s'il n'est pas coché
+                continue 
             
-            # 2. Reste de votre logique actuelle
             q = s['questions']
-            valid = True
+            valid = True # Par défaut valide (important pour le cas 0 filtre)
             stats = []
             
-            # On crée une copie propre de la colonne Thème pour éviter les espaces ou majuscules parasites
             themes_sujet = q['Thème'].astype(str).str.strip().str.lower()
             difficultes_sujet = q['Difficulté'].astype(str).str.strip().str.lower()
 
+            # Si on a des critères, on vérifie. Sinon, la boucle ne s'exécute pas et valid reste True.
             for c in criteres:
-                # Préparation du critère (nettoyage)
                 theme_recherche = str(c['theme']).strip().lower()
-                
-                # Récupération de la plage de difficulté
                 try:
                     idx_start = NIVEAUX_ORDRE.index(c['diff_range'][0])
                     idx_end = NIVEAUX_ORDRE.index(c['diff_range'][1])
@@ -236,23 +241,21 @@ if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container
                 except:
                     n_acc = [n.lower().strip() for n in NIVEAUX_ORDRE]
 
-                # --- LA LOGIQUE DE FILTRAGE ---
-                # On vérifie si le thème recherché est contenu dans le texte de la cellule
                 mask_theme = themes_sujet.str.contains(theme_recherche, regex=False, na=False)
                 mask_diff = difficultes_sujet.isin(n_acc)
                 
                 count = len(q[mask_theme & mask_diff])
                 stats.append(f"{c['theme']} ({count})")
                 
-                # Si le nombre de questions pour ce thème est insuffisant, on rejette le sujet
                 if count < c['min']:
                     valid = False
                     break 
 
             if valid:
-                s['stats'] = " | ".join(stats)
+                # Si pas de critères, on met un texte vide pour les stats
+                s['stats'] = " | ".join(stats) if stats else "Vue d'ensemble"
                 trouves.append(s)
-        
+                
         # --- NOUVEAU SYSTÈME DE TRI ---
         trouves.sort(key=lambda x: x['nom'].lower()) # Tri alphabétique A-Z
         st.session_state.resultats_recherche = sorted(trouves, key=lambda x: x['annee'], reverse=True) # Tri année 2024-2000
