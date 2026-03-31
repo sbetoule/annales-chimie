@@ -202,7 +202,7 @@ with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
     col_label, col_sel, col_txt = st.columns([1, 1, 2])
 
     with col_label:
-        st.markdown("<p style='margin-top:10px;'>📑 <b>Contenu des thèmes :</b></p>", unsafe_allow_html=True)
+        st.markdown("<p style='margin-top:10px;'>📑 <b>Contenu du thème :</b></p>", unsafe_allow_html=True)
 
     with col_sel:
         # On utilise label_visibility="collapsed" pour ne pas décaler la ligne
