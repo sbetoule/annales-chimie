@@ -187,7 +187,7 @@ with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
     with c3:
         st.markdown("**3. Analyse**"); st.info("⬇️ Les questions ciblées apparaîtront en bleu dans les détails et les changements de partie en gris.")
     st.markdown("<p class='cpge-warning'>⚠️ La liste des thématiques correspond au contenu des programmes de CPGE. Des niveaux de difficulté sont indiqués par rapport à un élève de CPGE. Ces derniers sont purement indicatifs et propres à l'interprétation des concepteurs de ce site.</p>", unsafe_allow_html=True)
-    descriptions_themes = # --- SECTION RÉFÉRENTIEL DES THÈMES ---
+    # --- SECTION RÉFÉRENTIEL DES THÈMES ---
     # (Tu peux enrichir ce dictionnaire ou le charger via un CSV)
     desc_themes = {
         "Acides / Bases": "Équilibres pH-métriques, calculs de pH, titrages et solutions tampons.",
