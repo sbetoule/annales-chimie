@@ -433,11 +433,17 @@ if st.session_state.resultats_recherche:
 
                       # 2. FONCTION DE STYLE MISE À JOUR
             def style_separateurs(row):
-                # Si c'est notre ligne de séparation (contient le tiret)
-                if row['Numéro'] == "—":
-                    return ['background-color: #F8F9FB; color: #F8F9FB; line-height: 1px; font-size: 1px; height: 2px'] * len(row)
+                # Style pour la ligne de changement de partie
+                if "CHANGEMENT DE PARTIE" in str(row['Thème']):
+                    return [
+                        'background-color: #EEEEEE; ' # Gris clair
+                        'color: #777777; '            # Texte gris foncé
+                        'font-weight: bold; ' 
+                        'font-style: italic; '
+                        'text-align: center;'
+                    ] * len(row)
                 
-                # Sinon, logique de surbrillance classique
+                # Logique de surbrillance classique (Questions trouvées)
                 is_highlighted = False
                 for c in criteres:
                     try:
