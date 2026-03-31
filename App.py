@@ -138,6 +138,16 @@ def charger_donnees(url):
             sujets.append({"nom": str(nom_sujet).strip(), "annee": str(annee).strip(), "questions": questions, "label": f"{str(nom_sujet).strip()} ({str(annee).strip()})"})
         return sujets
     except: return []
+# --- CHARGEMENT INITIAL POUR LES BORNES DE DATE ---
+data_full = charger_donnees(URL_CSV)
+if data_full:
+    # Extraction de toutes les années sous forme d'entiers pour le tri
+    toutes_annees = sorted(list(set([int(s['annee']) for s in data_full])), reverse=True)
+    annee_max_data = max(toutes_annees)
+    annee_min_data = min(toutes_annees)
+else:
+    toutes_annees = [2024]
+    annee_max_data, annee_min_data = 2024, 2000
 # --- AFFICHAGE ---
 st.markdown("""
 <div class="credits-compact">
@@ -185,7 +195,18 @@ with st.sidebar:
         options=["CPGE", "Agreg / CAPES", "IChO"],
         default=["CPGE", "Agreg / CAPES", "IChO"]
     )
-    
+    st.write("Période :")
+    # On définit les valeurs par défaut (2024 et 2020) si elles existent dans la liste
+    start_default = 2020 if 2020 in toutes_annees else annee_min_data
+    end_default = 2024 if 2024 in toutes_annees else annee_max_data
+
+    periode = st.select_slider(
+        "Sélectionnez l'intervalle d'années",
+        options=sorted(toutes_annees), # Du plus vieux au plus récent pour le slider
+        value=(start_default, end_default),
+        label_visibility="collapsed"
+    )
+    st.divider() # Un petit trait pour séparer des filtres thématiques
     criteres = []
     niveaux_lower = [n.lower().strip() for n in NIVEAUX_ORDRE]
     try: s_idx, e_idx = niveaux_lower.index("facile"), niveaux_lower.index("difficile")
@@ -224,7 +245,9 @@ if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container
             categorie_sujet = classifier_concours(s['nom'])
             if categorie_sujet not in categories_choisies:
                 continue 
-            
+            annee_sujet = int(s['annee'])
+            if not (periode[0] <= annee_sujet <= periode[1]):
+                continue
             q = s['questions']
             valid = True # Par défaut valide (important pour le cas 0 filtre)
             stats = []
