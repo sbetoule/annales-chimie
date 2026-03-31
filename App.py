@@ -358,7 +358,7 @@ if st.session_state.resultats_recherche:
             def style_separateurs(row):
                 # Si c'est notre ligne de séparation (contient le tiret)
                 if row['Numéro'] == "—":
-                    return ['background-color: #2c3e50; color: #2c3e50; font-size: 1px; height: 5px'] * len(row)
+                    return ['background-color: #a8a199; color: #a8a199; font-size: 1px; height: 5px'] * len(row)
                 
                 # Sinon, logique de surbrillance classique
                 is_highlighted = False
