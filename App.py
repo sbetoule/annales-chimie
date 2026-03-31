@@ -197,7 +197,7 @@ with st.sidebar:
     borne_gauche = annee_max_data
     borne_droite = annee_min_data
 
-    periode = st.select_slider(
+    periode_choisie = st.select_slider(
         "Sélectionnez l'intervalle d'années",
         options=liste_annees_desc, 
         value=(borne_gauche, borne_droite),
