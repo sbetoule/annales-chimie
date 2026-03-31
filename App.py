@@ -194,8 +194,8 @@ with st.sidebar:
         default=["CPGE", "Agreg / CAPES", "IChO"]
     )
     st.write("Période :")
-    borne_gauche = annee_max_absolue
-    borne_droite = annee_min_absolue
+    borne_gauche = annee_max_data
+    borne_droite = annee_min_data
 
     periode = st.select_slider(
         "Sélectionnez l'intervalle d'années",
