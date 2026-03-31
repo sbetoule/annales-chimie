@@ -219,7 +219,12 @@ with st.sidebar:
 
     if st.session_state.nb_filtres == 0:
         st.info("💡 Aucun filtre thématique actif.")
-    
+
+    regrouper_par_partie = False 
+    if st.session_state.nb_filtres > 0:
+        regrouper_par_partie = st.checkbox(
+            "🎯 Les questions vérifiant ces critères doivent apparaître dans la même partie du sujet", 
+            value=False)
     label_plus = "➕ Filtre thématique" if st.session_state.nb_filtres == 0 else "➕ Filtre supplémentaire"
     if st.button(label_plus, use_container_width=True): 
         st.session_state.nb_filtres += 1
@@ -244,35 +249,83 @@ if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container
             annee_fin = max(periode_choisie)
             if not (annee_debut <= annee_sujet <= annee_fin):
                 continue
-            q = s['questions']
-            valid = True # Par défaut valide (important pour le cas 0 filtre)
+            q = s['questions'].copy()
+            valid = True
             stats = []
             
-            themes_sujet = q['Thème'].astype(str).str.strip().str.lower()
-            difficultes_sujet = q['Difficulté'].astype(str).str.strip().str.lower()
+            # --- NOUVELLE LOGIQUE DE VALIDATION ---
+            if regrouper_par_partie and criteres:
+                # 1. Découpage du sujet en listes de DataFrames (une par partie)
+                parties = []
+                debut_idx = 0
+                for i, (idx_row, row) in enumerate(q.iterrows()):
+                    if str(row['Numéro']).lower().strip().endswith("end"):
+                        parties.append(q.iloc[debut_idx : i+1])
+                        debut_idx = i + 1
+                if debut_idx < len(q): # Ajoute la dernière partie si pas de "end"
+                    parties.append(q.iloc[debut_idx:])
 
-            # Si on a des critères, on vérifie. Sinon, la boucle ne s'exécute pas et valid reste True.
-            for c in criteres:
-                theme_recherche = str(c['theme']).strip().lower()
-                try:
-                    idx_start = NIVEAUX_ORDRE.index(c['diff_range'][0])
-                    idx_end = NIVEAUX_ORDRE.index(c['diff_range'][1])
-                    n_acc = [n.lower().strip() for n in NIVEAUX_ORDRE[idx_start : idx_end + 1]]
-                except:
-                    n_acc = [n.lower().strip() for n in NIVEAUX_ORDRE]
+                # 2. Vérification : CHAQUE critère doit être satisfait dans AU MOINS UNE partie (pas forcément la même pour tous)
+                # OU si vous voulez que TOUS les critères soient dans la MÊME partie :
+                sujet_valide_par_bloc = True
+                
+                for c in criteres:
+                    theme_recherche = str(c['theme']).strip().lower()
+                    try:
+                        idx_start = NIVEAUX_ORDRE.index(c['diff_range'][0])
+                        idx_end = NIVEAUX_ORDRE.index(c['diff_range'][1])
+                        n_acc = [n.lower().strip() for n in NIVEAUX_ORDRE[idx_start : idx_end + 1]]
+                    except: n_acc = [n.lower().strip() for n in NIVEAUX_ORDRE]
 
-                mask_theme = themes_sujet.str.contains(theme_recherche, regex=False, na=False)
-                mask_diff = difficultes_sujet.isin(n_acc)
-                
-                count = len(q[mask_theme & mask_diff])
-                stats.append(f"{c['theme']} ({count})")
-                
-                if count < c['min']:
-                    valid = False
-                    break 
+                    # On cherche si une partie au moins contient le quota
+                    critere_satisfait_quelque_part = False
+                    for p in parties:
+                        mask_p = p['Thème'].astype(str).str.lower().str.contains(theme_recherche, na=False) & \
+                                 p['Difficulté'].astype(str).str.lower().str.strip().isin(n_acc)
+                        if len(p[mask_p]) >= c['min']:
+                            critere_satisfait_quelque_part = True
+                            break
+                    
+                    if not critere_satisfait_quelque_part:
+                        sujet_valide_par_bloc = False
+                        break
+                valid = sujet_valide_par_bloc
+
+            else:
+                # LOGIQUE ACTUELLE (Globale sur tout le sujet)
+                themes_sujet = q['Thème'].astype(str).str.strip().str.lower()
+                difficultes_sujet = q['Difficulté'].astype(str).str.strip().str.lower()
+                for c in criteres:
+                    theme_recherche = str(c['theme']).strip().lower()
+                    try:
+                        idx_start = NIVEAUX_ORDRE.index(c['diff_range'][0])
+                        idx_end = NIVEAUX_ORDRE.index(c['diff_range'][1])
+                        n_acc = [n.lower().strip() for n in NIVEAUX_ORDRE[idx_start : idx_end + 1]]
+                    except: n_acc = [n.lower().strip() for n in NIVEAUX_ORDRE]
+
+                    mask_theme = themes_sujet.str.contains(theme_recherche, regex=False, na=False)
+                    mask_diff = difficultes_sujet.isin(n_acc)
+                    if len(q[mask_theme & mask_diff]) < c['min']:
+                        valid = False
+                        break
 
             if valid:
-                # Si pas de critères, on met un texte vide pour les stats
+                for c in criteres:
+                    # On définit la plage de difficulté acceptée pour ce critère précis
+                    try:
+                        idx_s = NIVEAUX_ORDRE.index(c['diff_range'][0])
+                        idx_e = NIVEAUX_ORDRE.index(c['diff_range'][1])
+                        n_criteres_acc = [n.lower().strip() for n in NIVEAUX_ORDRE[idx_s : idx_e + 1]]
+                    except:
+                        n_criteres_acc = [n.lower().strip() for n in NIVEAUX_ORDRE]
+                    
+                    # Comptage sur TOUTES les questions du sujet
+                    mask_stat = q['Thème'].astype(str).str.lower().str.contains(str(c['theme']).lower(), na=False) & \
+                                q['Difficulté'].astype(str).str.lower().str.strip().isin(n_criteres_acc)
+                    
+                    count = len(q[mask_stat])
+                    stats.append(f"{c['theme']} ({count})")
+                
                 s['stats'] = " | ".join(stats) if stats else ""
                 trouves.append(s)
                 
