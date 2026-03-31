@@ -355,7 +355,7 @@ if st.session_state.resultats_recherche:
                 
                 if is_end_of_part:
                     # Ajoute une bordure noire marquée en bas de la ligne
-                    row_style += "border-bottom: 2px solid #2c3e50 !important;"
+                    row_style += "border-bottom: 3px double #2c3e50 !important;"
 
                 return [row_style] * len(row)
 
