@@ -187,7 +187,27 @@ with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
     with c3:
         st.markdown("**3. Analyse**"); st.info("⬇️ Les questions ciblées apparaîtront en bleu dans les détails et les changements de partie en gris.")
     st.markdown("<p class='cpge-warning'>⚠️ La liste des thématiques correspond au contenu des programmes de CPGE. Des niveaux de difficulté sont indiqués par rapport à un élève de CPGE. Ces derniers sont purement indicatifs et propres à l'interprétation des concepteurs de ce site.</p>", unsafe_allow_html=True)
+    descriptions_themes = {
+        "Thermodynamique": "Étude des transferts d'énergie, premier et second principes, grandeurs d'état et équilibres chimiques. Niveau : PCSI/BCPST/MP.",
+        "Cinétique chimique": "Vitesse de réaction, lois de vitesse, mécanismes réactionnels (étapes élémentaires, AEQS). Niveau : Toutes filières.",
+        "Chimie Organique": "Réactivité des fonctions, mécanismes (SN, E, Addition), stéréochimie et stratégies de synthèse. Niveau : PC/BCPST.",
+        "Solution aqueuse": "Équilibres acido-basiques, complexation, précipitation et diagrammes de distribution. Niveau : Toutes filières."
+    }
 
+    # 2. Affichage de l'outil de consultation
+    st.markdown("🔍 **Détail des thématiques**")
+    col_theme, col_desc = st.columns([1, 2]) # Ratio 1/3 - 2/3 pour rester compact
+    
+    with col_theme:
+        theme_select = st.selectbox(
+            "Choisir un thème pour voir le détail :",
+            options=list(descriptions_themes.keys()),
+            label_visibility="collapsed" # Cache le label pour gagner de la place
+        )
+    
+    with col_desc:
+        if theme_select:
+            st.info(descriptions_themes[theme_select])
 # --- BARRE LATÉRALE ---
 def classifier_concours(nom_sujet):
     nom = str(nom_sujet).upper()
