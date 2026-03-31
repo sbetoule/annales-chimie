@@ -22,11 +22,7 @@ st.markdown("""
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@800;900&family=Permanent+Marker&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
-       /* Réduire l'espace global entre les éléments de la sidebar */
-        [data-testid="stSidebarUserContent"] .stElementContainer {
-            margin-bottom: -15px !important;
-        }
-
+  
         /* Réduire spécifiquement l'espace autour des dividers dans la sidebar */
         [data-testid="stSidebarUserContent"] hr {
             margin-top: 5px !important;
