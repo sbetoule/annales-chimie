@@ -175,7 +175,7 @@ with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
     with c2:
         st.markdown("**2. Recherche**"); st.info("Cliquez sur le bouton 🔎 **Lancer la recherche**.")
     with c3:
-        st.markdown("**3. Analyse**"); st.info("⬇️ Les questions ciblées apparaîtront en bleu dans les détails.")
+        st.markdown("**3. Analyse**"); st.info("⬇️ Les questions ciblées apparaîtront en bleu dans les détails. Les changements de partie apparaîtront en gris.")
     st.markdown("<p class='cpge-warning'>⚠️ La liste des thématiques correspond au contenu des programmes de CPGE. Des niveaux de difficulté sont indiqués par rapport à un élève de CPGE. Ces derniers sont purement indicatifs et propres à l'interprétation des concepteurs de ce site.</p>", unsafe_allow_html=True)
 
 # --- BARRE LATÉRALE ---
