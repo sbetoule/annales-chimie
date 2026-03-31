@@ -423,8 +423,8 @@ if st.session_state.resultats_recherche:
                 if is_end:
                     separateur = pd.Series({
                         'Numéro': "───"*20, 
-                        'Thème':". " * 50,
-                        'Difficulté': ". " * 50,
+                        'Thème':"- - -" * 50,
+                        'Difficulté': "- - -" * 50,
                         'Remarque': "───"*20
                     })
                     lignes_avec_separateurs.append(separateur)
