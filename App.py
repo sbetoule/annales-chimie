@@ -47,7 +47,9 @@ def mettre_a_jour_stats(type_action="visite"):
         ])
         
         # 5. Mise à jour
-        conn.update(worksheet="Compteur", data=new_stats, header=False)
+        conn.update(spreadsheet=URL_EDITION, 
+            worksheet="compteur", 
+            data=new_stats)
         
         return nb_visites, nb_recherches
 
