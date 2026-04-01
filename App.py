@@ -24,7 +24,7 @@ def mettre_a_jour_stats(type_action="visite"):
     try:
         # 1. Lecture forcée (pas de cache)
         # On lit toute la feuille pour être sûr de l'alignement
-        df_stats = conn.read(spreadsheet=URL_EDITION, 
+        df_stats = conn.read(spreadsheet=URL_COMPTEUR, 
             worksheet="Compteur", 
             header=None, 
             ttl=0)
