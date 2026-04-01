@@ -21,8 +21,10 @@ conn = st.connection("gsheets", type=GSheetsConnection)
 
 def mettre_a_jour_stats(type_action="visite"):
     try:
-        # Lire les données actuelles
-        df_stats = conn.read(worksheet="Compteur", usecols=[0, 1], nrows=2, header=None)
+        # ttl=0 est CRUCIAL pour ne pas lire une ancienne valeur en cache
+        df_stats = conn.read(worksheet="Compteur", usecols=[0, 1], nrows=2, header=None, ttl=0)
+        
+        # On récupère les valeurs actuelles en B1 et B2
         nb_visites = int(df_stats.iloc[0, 1])
         nb_recherches = int(df_stats.iloc[1, 1])
 
@@ -31,17 +33,18 @@ def mettre_a_jour_stats(type_action="visite"):
         elif type_action == "recherche":
             nb_recherches += 1
         
-        # Créer le nouveau DataFrame pour écraser l'ancien
+        # On recrée le DataFrame avec EXACTEMENT les mêmes titres qu'en photo
         new_stats = pd.DataFrame([
-            ["visites", nb_visites],
-            ["recherches", nb_recherches]
+            ["Compteur connexion", nb_visites],
+            ["Compteur recherche", nb_recherches]
         ])
         
-        # Mise à jour globale de l'onglet
-        conn.update(worksheet="Compteur", data=new_stats)
+        # Mise à jour sur Google Sheets
+        conn.update(worksheet="Compteur", data=new_stats, header=False)
         return nb_visites, nb_recherches
     except Exception as e:
-        # st.error(f"Erreur stats: {e}") # Utile pour le debug
+        # En cas d'erreur (ex: problème de droits), on affiche l'erreur pour débugger
+        # st.sidebar.error(f"Erreur Sheets : {e}") 
         return 0, 0
 
 # Logique de session pour ne pas compter +1 à chaque rafraîchissement
