@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from streamlit_gsheets import GSheetsConnection
 
 # Configuration de la page
 st.set_page_config(
@@ -15,6 +16,42 @@ st.set_page_config(
             Développé par Sylvain Betoule, Ulysse Garnier et Morgane Leite.
         """
     })
+# --- CONNEXION ET COMPTEURS ---
+conn = st.connection("gsheets", type=GSheetsConnection)
+
+def mettre_a_jour_stats(type_action="visite"):
+    try:
+        # Lire les données actuelles
+        df_stats = conn.read(worksheet="Compteur", usecols=[0, 1], nrows=2, header=None)
+        nb_visites = int(df_stats.iloc[0, 1])
+        nb_recherches = int(df_stats.iloc[1, 1])
+
+        if type_action == "visite":
+            nb_visites += 1
+        elif type_action == "recherche":
+            nb_recherches += 1
+        
+        # Créer le nouveau DataFrame pour écraser l'ancien
+        new_stats = pd.DataFrame([
+            ["visites", nb_visites],
+            ["recherches", nb_recherches]
+        ])
+        
+        # Mise à jour globale de l'onglet
+        conn.update(worksheet="Compteur", data=new_stats)
+        return nb_visites, nb_recherches
+    except Exception as e:
+        # st.error(f"Erreur stats: {e}") # Utile pour le debug
+        return 0, 0
+
+# Logique de session pour ne pas compter +1 à chaque rafraîchissement
+if 'v_total' not in st.session_state:
+    v_total, r_total = mettre_a_jour_stats("visite")
+    st.session_state.v_total = v_total
+    st.session_state.r_total = r_total
+else:
+    v_total = st.session_state.v_total
+    r_total = st.session_state.r_total
 
 # --- STYLE CSS (LOGO, CRÉDITS, ANIMATION MOBILE) ---
 st.markdown("""
@@ -170,6 +207,14 @@ st.markdown("""
     </a>
 </div>
 """, unsafe_allow_html=True)
+st.markdown(
+    f"""
+    <div style="text-align: right; font-size: 0.8rem; color: #95a5a6; margin-top: -30px; margin-bottom: 5px;">
+        📊 <b>{v_total}</b> visites • 🔎 <b>{r_total}</b> recherches
+    </div>
+    """, 
+    unsafe_allow_html=True
+)
 st.markdown("""
     <div class="logo-graphic-container">
         <span class="logo-text-base logo-annales">Annales</span>
@@ -248,6 +293,8 @@ with st.sidebar:
             st.rerun()
    
 if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container_width=True):
+    _, r_actu = mettre_a_jour_stats("recherche")
+    st.session_state.r_total = r_actu  # Mise à jour visuelle immédiate
     if 'sujet_selectionne' in st.session_state:
         del st.session_state.sujet_selectionne
     with st.spinner("Analyse de la base de données en cours..."):
