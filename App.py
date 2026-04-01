@@ -21,30 +21,35 @@ conn = st.connection("gsheets", type=GSheetsConnection)
 
 def mettre_a_jour_stats(type_action="visite"):
     try:
-        # ttl=0 est CRUCIAL pour ne pas lire une ancienne valeur en cache
-        df_stats = conn.read(worksheet="Compteur", usecols=[0, 1], nrows=2, header=None, ttl=0)
+        # 1. Lecture forcée (pas de cache)
+        # On lit toute la feuille pour être sûr de l'alignement
+        df_stats = conn.read(worksheet="Compteur", header=None, ttl=0)
         
-        # On récupère les valeurs actuelles en B1 et B2
+        # 2. Extraction sécurisée
         nb_visites = int(df_stats.iloc[0, 1])
         nb_recherches = int(df_stats.iloc[1, 1])
 
+        # 3. Incrémentation
         if type_action == "visite":
             nb_visites += 1
         elif type_action == "recherche":
             nb_recherches += 1
         
-        # On recrée le DataFrame avec EXACTEMENT les mêmes titres qu'en photo
+        # 4. Préparation du DataFrame de retour
+        # On garde EXACTEMENT vos libellés A1 et A2
         new_stats = pd.DataFrame([
             ["Compteur connexion", nb_visites],
             ["Compteur recherche", nb_recherches]
         ])
         
-        # Mise à jour sur Google Sheets
+        # 5. Mise à jour
         conn.update(worksheet="Compteur", data=new_stats, header=False)
+        
         return nb_visites, nb_recherches
+
     except Exception as e:
-        # En cas d'erreur (ex: problème de droits), on affiche l'erreur pour débugger
-        # st.sidebar.error(f"Erreur Sheets : {e}") 
+        # DIAGNOSTIC : Affiche l'erreur réelle dans l'interface
+        st.sidebar.error(f"⚠️ Erreur de mise à jour : {e}")
         return 0, 0
 
 # Logique de session pour ne pas compter +1 à chaque rafraîchissement
