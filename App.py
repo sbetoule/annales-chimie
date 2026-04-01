@@ -1,5 +1,15 @@
 import streamlit as st
 import pandas as pd
+# Collez votre code Google Analytics ici
+ga_code = """
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-G7EE1V3XFL"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-G7EE1V3XFL');
+</script>
+"""
 
 # Configuration de la page
 st.set_page_config(
