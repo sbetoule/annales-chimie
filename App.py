@@ -57,15 +57,16 @@ def mettre_a_jour_stats(type_action="visite"):
         # DIAGNOSTIC : Affiche l'erreur réelle dans l'interface
         st.sidebar.error(f"⚠️ Erreur de mise à jour : {e}")
         return 0, 0
-
-# Logique de session pour ne pas compter +1 à chaque rafraîchissement
 if 'v_total' not in st.session_state:
+    # On initialise les variables AVANT pour éviter les appels en boucle
+    st.session_state.v_total = 0
+    st.session_state.r_total = 0
+    
+    # Un seul appel API ici
     v_total, r_total = mettre_a_jour_stats("visite")
+    
     st.session_state.v_total = v_total
     st.session_state.r_total = r_total
-else:
-    v_total = st.session_state.v_total
-    r_total = st.session_state.r_total
 
 # --- STYLE CSS (LOGO, CRÉDITS, ANIMATION MOBILE) ---
 st.markdown("""
