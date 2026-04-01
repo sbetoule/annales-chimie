@@ -54,23 +54,21 @@ def mettre_a_jour_stats(type_action="visite"):
         return nb_visites, nb_recherches
 
     except Exception as e:
-        # DIAGNOSTIC : Affiche l'erreur réelle dans l'interface
-        st.sidebar.error(f"⚠️ Erreur de mise à jour : {e}")
-        return 0, 0
+        st.sidebar.error(f"⚠️ Erreur de connexion stats : {e}")
+        # On renvoie les valeurs actuelles de la session pour ne pas afficher "0"
+        return st.session_state.get('v_total', 0), st.session_state.get('r_total', 0)
 # --- INITIALISATION SÉCURISÉE DES VARIABLES ---
-v_total = 0
-r_total = 0
-
+# On ne définit PAS v_total = 0 ici, sinon l'affichage risque d'être faux
 if 'v_total' not in st.session_state:
-    # Premier passage : on tente de joindre Google
+    # C'est la toute première fois que cet utilisateur arrive
     v_total, r_total = mettre_a_jour_stats("visite")
     st.session_state.v_total = v_total
     st.session_state.r_total = r_total
 else:
-    # Passages suivants : on utilise ce qui est en mémoire
+    # L'utilisateur est déjà là, on récupère les valeurs de sa session
     v_total = st.session_state.v_total
     r_total = st.session_state.r_total
-
+    
 # --- STYLE CSS (LOGO, CRÉDITS, ANIMATION MOBILE) ---
 st.markdown("""
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -311,8 +309,15 @@ with st.sidebar:
             st.rerun()
    
 if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container_width=True):
-    _, r_actu = mettre_a_jour_stats("recherche")
-    st.session_state.r_total = r_actu  # Mise à jour visuelle immédiate
+    v_actu, r_actu = mettre_a_jour_stats("recherche")
+    
+    # 2. MISE À JOUR SYNCHRONE de la session pour l'affichage
+    st.session_state.v_total = v_actu
+    st.session_state.r_total = r_actu
+    
+    # On force les variables locales pour l'affichage HTML juste après
+    v_total = v_actu
+    r_total = r_actu
     if 'sujet_selectionne' in st.session_state:
         del st.session_state.sujet_selectionne
     with st.spinner("Analyse de la base de données en cours..."):
