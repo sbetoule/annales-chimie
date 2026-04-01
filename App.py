@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-from streamlit_gsheets import GSheetsConnection
 
 # Configuration de la page
 st.set_page_config(
@@ -16,59 +15,7 @@ st.set_page_config(
             Développé par Sylvain Betoule, Ulysse Garnier et Morgane Leite.
         """
     })
-# --- CONNEXION ET COMPTEURS ---
-conn = st.connection("gsheets", type=GSheetsConnection)
-URL_COMPTEUR = "https://docs.google.com/spreadsheets/d/1XfC3XTT_rMjRHo40GhUeKqpVKDcJj0e6ziAhmQL-txA/edit?usp=sharing"
 
-def mettre_a_jour_stats(type_action="visite"):
-    try:
-        # 1. Lecture forcée (pas de cache)
-        # On lit toute la feuille pour être sûr de l'alignement
-        df_stats = conn.read(spreadsheet=URL_COMPTEUR, 
-            worksheet="compteur", 
-            header=None, 
-            ttl=0)
-        
-        # 2. Extraction sécurisée
-        nb_visites = int(df_stats.iloc[0, 1])
-        nb_recherches = int(df_stats.iloc[1, 1])
-
-        # 3. Incrémentation
-        if type_action == "visite":
-            nb_visites += 1
-        elif type_action == "recherche":
-            nb_recherches += 1
-        
-        # 4. Préparation du DataFrame de retour
-        # On garde EXACTEMENT vos libellés A1 et A2
-        new_stats = pd.DataFrame([
-            ["Compteur connexion", nb_visites],
-            ["Compteur recherche", nb_recherches]
-        ])
-        
-        # 5. Mise à jour
-        conn.update(spreadsheet=URL_COMPTEUR, 
-            worksheet="compteur", 
-            data=new_stats)
-        
-        return nb_visites, nb_recherches
-
-    except Exception as e:
-        st.sidebar.error(f"⚠️ Erreur de connexion stats : {e}")
-        # On renvoie les valeurs actuelles de la session pour ne pas afficher "0"
-        return st.session_state.get('v_total', 0), st.session_state.get('r_total', 0)
-# --- INITIALISATION SÉCURISÉE DES VARIABLES ---
-# On ne définit PAS v_total = 0 ici, sinon l'affichage risque d'être faux
-if 'v_total' not in st.session_state:
-    # C'est la toute première fois que cet utilisateur arrive
-    v_total, r_total = mettre_a_jour_stats("visite")
-    st.session_state.v_total = v_total
-    st.session_state.r_total = r_total
-else:
-    # L'utilisateur est déjà là, on récupère les valeurs de sa session
-    v_total = st.session_state.v_total
-    r_total = st.session_state.r_total
-    
 # --- STYLE CSS (LOGO, CRÉDITS, ANIMATION MOBILE) ---
 st.markdown("""
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -223,14 +170,6 @@ st.markdown("""
     </a>
 </div>
 """, unsafe_allow_html=True)
-st.markdown(
-    f"""
-    <div style="text-align: right; font-size: 0.8rem; color: #95a5a6; margin-top: -30px; margin-bottom: 5px;">
-        📊 <b>{v_total}</b> visites • 🔎 <b>{r_total}</b> recherches
-    </div>
-    """, 
-    unsafe_allow_html=True
-)
 st.markdown("""
     <div class="logo-graphic-container">
         <span class="logo-text-base logo-annales">Annales</span>
@@ -309,15 +248,6 @@ with st.sidebar:
             st.rerun()
    
 if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container_width=True):
-    v_actu, r_actu = mettre_a_jour_stats("recherche")
-    
-    # 2. MISE À JOUR SYNCHRONE de la session pour l'affichage
-    st.session_state.v_total = v_actu
-    st.session_state.r_total = r_actu
-    
-    # On force les variables locales pour l'affichage HTML juste après
-    v_total = v_actu
-    r_total = r_actu
     if 'sujet_selectionne' in st.session_state:
         del st.session_state.sujet_selectionne
     with st.spinner("Analyse de la base de données en cours..."):
