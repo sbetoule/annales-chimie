@@ -1,15 +1,5 @@
 import streamlit as st
 import pandas as pd
-# Collez votre code Google Analytics ici
-ga_code = """
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-G7EE1V3XFL"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-G7EE1V3XFL');
-</script>
-"""
 
 # Configuration de la page
 st.set_page_config(
@@ -25,6 +15,20 @@ st.set_page_config(
             Développé par Sylvain Betoule, Ulysse Garnier et Morgane Leite.
         """
     })
+
+# 2. Injection du code Google Analytics
+ga_code = """
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-G7EE1V3XFL"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-G7EE1V3XFL');
+</script>
+"""
+
+# Utilisation d'un composant vide pour injecter le JS dans le DOM
+st.components.v1.html(ga_code, height=0)
 # --- STYLE CSS (LOGO, CRÉDITS, ANIMATION MOBILE) ---
 st.markdown("""
     <link rel="preconnect" href="https://fonts.googleapis.com">
