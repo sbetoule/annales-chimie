@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 
 # Configuration de la page
 st.set_page_config(
@@ -189,6 +190,47 @@ with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
         st.markdown("**3. Analyse**"); st.info("⬇️ Les questions ciblées apparaîtront en bleu dans les détails et les changements de partie en pointillés.")
     st.markdown("<p class='cpge-warning'>⚠️ La liste des thématiques correspond au contenu des programmes de CPGE. Des niveaux de difficulté sont indiqués par rapport à un élève de CPGE. Ces derniers sont purement indicatifs et propres à l'interprétation des concepteurs de ce site.</p>", unsafe_allow_html=True)
 
+def afficher_analyse_graphique(resultats):
+    if not resultats:
+        return
+
+    # 1. Préparation des données : on aplatit toutes les questions de tous les sujets trouvés
+    tous_themes = []
+    for s in resultats:
+        themes_sujet = s['questions']['Thème'].dropna().astype(str).tolist()
+        tous_themes.extend(themes_sujet)
+    
+    df_stats = pd.DataFrame(tous_themes, columns=['Thème'])
+    
+    # On compte les occurrences
+    df_counts = df_stats['Thème'].value_counts().reset_index()
+    df_counts.columns = ['Thème', 'Nombre de questions']
+    
+    # Calcul de la proportion (en %)
+    total_q = df_counts['Nombre de questions'].sum()
+    df_counts['Proportion (%)'] = (df_counts['Nombre de questions'] / total_q * 100).round(1)
+
+    # 2. Création du graphique interactif (Treemap)
+    # Le Treemap montre la proportion par la taille des rectangles
+    fig = px.treemap(
+        df_counts, 
+        path=['Thème'], 
+        values='Nombre de questions',
+        color='Nombre de questions',
+        color_continuous_scale='Blues',
+        custom_data=['Proportion (%)'],
+        title="Répartition des thématiques dans les résultats de recherche"
+    )
+    
+    # Personnalisation du survol (Tooltip)
+    fig.update_traces(
+        hovertemplate="<b>%{label}</b><br>Fréquence : %{value} questions<br>Part relative : %{customdata[0]}%"
+    )
+    
+    fig.update_layout(margin=dict(t=30, l=10, r=10, b=10))
+    
+    st.plotly_chart(fig, use_container_width=True)
+
 # --- BARRE LATÉRALE ---
 def classifier_concours(nom_sujet):
     nom = str(nom_sujet).upper()
@@ -364,6 +406,9 @@ if st.session_state.resultats_recherche:
     nb = len(st.session_state.resultats_recherche)
     label_sujet = "sujet trouvé" if nb == 1 else "sujets trouvés"
     st.success(f"✅ {nb} {label_sujet}")
+
+    with st.expander("📊 Analyse statistique des thématiques trouvées", expanded=False):
+        afficher_analyse_graphique(st.session_state.resultats_recherche)
 
     for idx, r in enumerate(st.session_state.resultats_recherche):
         # On utilise une flèche ou un séparateur pour bien distinguer les deux parties
