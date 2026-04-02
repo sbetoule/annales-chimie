@@ -203,42 +203,44 @@ def afficher_analyse_graphique(resultats):
     df_stats = pd.DataFrame(tous_themes, columns=['Thème'])
     df_stats = df_stats[~df_stats['Thème'].str.contains('autre', case=False, na=False)]
     
+    if df_stats.empty:
+        st.info("Aucune donnée statistique à afficher (hors thèmes 'Autre').")
+        return
+
     # 2. Comptage
     df_counts = df_stats['Thème'].value_counts().reset_index()
     df_counts.columns = ['Thème', 'Nombre']
     
-    # Calcul du % pour le survol
-    total_q = df_counts['Nombre'].sum()
-    df_counts['Proportion'] = (df_counts['Nombre'] / total_q * 100).round(1)
-
-    # 3. Création du Treemap
+    # 3. Création du Treemap sans "path" complexe pour éviter les erreurs de mapping
     fig = px.treemap(
         df_counts, 
-        path=[px.Constant("Toutes les thématiques"), 'Thème'], # Ajoute une racine pour un meilleur rendu
+        path=[px.Constant("Analyses"), 'Thème'], 
         values='Nombre',
         color='Nombre',
         color_continuous_scale='Blues',
     )
 
-    # 4. Stylisation "Smooth"
+    # 4. Stylisation "Smooth" et Sécurisée
+    # On calcule la proportion directement dans le hover pour éviter l'erreur de customdata
+    total_q = df_counts['Nombre'].sum()
+    
     fig.update_traces(
-        # Centrage du texte (Horizontal et Vertical)
         textinfo="label+value",
         texttemplate="<br><b>%{label}</b><br>%{value} questions",
         textfont=dict(size=16, family="Poppins, sans-serif"),
-        # Style des blocs
-        marker=dict(pad=dict(t=0, l=0, r=0, b=0), borderwidth=2),
-        hovertemplate="<b>%{label}</b><br>Fréquence : %{value}<br>%{customdata[0]}% des résultats<extra></extra>",
-        customdata=df_counts[['Proportion']]
+        marker=dict(borderwidth=2),
+        # On simplifie le hover pour éviter le conflit de taille de liste
+        hovertemplate="<b>%{label}</b><br>Occurrences : %{value}<extra></extra>"
     )
 
     fig.update_layout(
-        margin=dict(t=10, l=10, r=10, b=10),
-        height=500,
-        coloraxis_showscale=False, # Cache la barre de couleur pour épurer
+        margin=dict(t=30, l=10, r=10, b=10),
+        height=450,
+        coloraxis_showscale=False,
+        template="plotly_white"
     )
 
-    # On retire le bandeau de titre gris en haut (la "racine")
+    # Supprime la barre grise de titre en haut
     fig.update_layout(treemapcolorway=["#ffffff"]) 
 
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
