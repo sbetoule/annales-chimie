@@ -194,53 +194,57 @@ def afficher_analyse_graphique(resultats):
     if not resultats:
         return
 
-    # 1. Extraction et nettoyage
+    # 1. Nettoyage des données
     tous_themes = []
     for s in resultats:
         themes_sujet = s['questions']['Thème'].dropna().astype(str).tolist()
         tous_themes.extend(themes_sujet)
     
     df_stats = pd.DataFrame(tous_themes, columns=['Thème'])
-    
-    # Nettoyage strict (on enlève "Autre" et les lignes vides)
     df_stats = df_stats[~df_stats['Thème'].str.contains('autre', case=False, na=False)]
     df_stats = df_stats[df_stats['Thème'].str.strip() != ""]
     
     if df_stats.empty:
         return
 
-    # 2. Préparation des comptes
+    # 2. Préparation des données
     df_counts = df_stats['Thème'].value_counts().reset_index()
     df_counts.columns = ['Thème', 'Nombre']
 
-    # 3. Création du Treemap en mode "Flat" (Sans hiérarchie instable)
-    import plotly.graph_objects as go
-
+    # 3. Création du Graphique avec Retours à la ligne et Marges
     fig = go.Figure(go.Treemap(
         labels=df_counts['Thème'],
-        parents=[""] * len(df_counts), # Pas de parent pour éviter le bloc gris vide
+        parents=[""] * len(df_counts),
         values=df_counts['Nombre'],
-        textinfo="label+value",
-        texttemplate="<br><b>%{label}</b><br><span style='font-size:20px'>%{value}</span>",
-        hovertemplate="<b>%{label}</b><br>Occurrences : %{value}<extra></extra>",
+        # On utilise <br> pour forcer le retour à la ligne et du HTML pour le style
+        texttemplate=(
+            "<br><b>%{label}</b><br><br>"
+            "<span style='font-size:22px; opacity:0.8'>%{value}</span><br>"
+            "<span style='font-size:12px'>QUESTIONS</span>"
+        ),
+        textposition="middle center",
+        hovertemplate="<b>%{label}</b><br>Total : %{value} questions<extra></extra>",
         marker=dict(
             colors=df_counts['Nombre'],
             colorscale='Blues',
-            line=dict(width=2, color='white')
+            # 'pad' crée l'espace entre les blocs (les marges)
+            pad=dict(b=10, l=10, r=10, t=10), 
+            line=dict(width=3, color='white')
         ),
-        # Centrage du texte
-        textfont=dict(size=15, family="Poppins, sans-serif"),
     ))
 
-    # 4. Mise en page
+    # 4. Ajustements Cosmétiques
     fig.update_layout(
         margin=dict(t=10, l=10, r=10, b=10),
-        height=450,
-        template="plotly_white"
+        height=500,
+        # Uniformise la police pour tout le graphique
+        font=dict(family="Arial, sans-serif", color="white"),
+        # Cache la barre de couleur pour un look plus "App"
+        coloraxis_showscale=False
     )
 
+    # Supprime les interactions inutiles pour garder le focus sur la lecture
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
-
 # --- BARRE LATÉRALE ---
 def classifier_concours(nom_sujet):
     nom = str(nom_sujet).upper()
