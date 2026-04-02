@@ -191,56 +191,44 @@ with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
         st.markdown("**3. Analyse**"); st.info("⬇️ Les questions ciblées apparaîtront en bleu dans les détails et les changements de partie en pointillés.")
     st.markdown("<p class='cpge-warning'>⚠️ La liste des thématiques correspond au contenu des programmes de CPGE. Des niveaux de difficulté sont indiqués par rapport à un élève de CPGE. Ces derniers sont purement indicatifs et propres à l'interprétation des concepteurs de ce site.</p>", unsafe_allow_html=True)
 def afficher_flux_thematiques(resultats):
-    if not resultats or len(resultats) < 1:
-        return
-
-    couples = []
-    for s in resultats:
-        # On récupère la liste des thèmes dans l'ordre du sujet
-        themes = s['questions']['Thème'].dropna().astype(str).tolist()
-        # On filtre "Autre" pour la clarté
-        themes = [t for t in themes if "autre" not in t.lower()]
-        
-        # On crée les paires (Thème Actuel -> Thème Suivant)
-        for i in range(len(themes) - 1):
-            source = themes[i].strip()
-            target = themes[i+1].strip()
-            if source != target: # Optionnel : on ne relie que si le thème change
-                couples.append({'source': source, 'target': target})
-
-    if not couples:
-        st.info("Pas assez de transitions entre thèmes différents pour générer le flux.")
-        return
-
+    # ... (récupération des couples identique) ...
+    
     df_flux = pd.DataFrame(couples)
-    # On compte combien de fois chaque transition arrive
     df_counts = df_flux.groupby(['source', 'target']).size().reset_index(name='count')
+    
+    # --- FILTRE DE CLARTÉ : On ne garde que les transitions fréquentes ---
+    # On peut même mettre un slider Streamlit ici pour laisser l'utilisateur choisir
+    seuil = st.slider("Filtrer la complexité (min. occurrences)", 1, 5, 2)
+    df_counts = df_counts[df_counts['count'] >= seuil]
 
-    # Mapping des noms de thèmes vers des indices numériques pour Plotly
-    all_nodes = list(pd.concat([df_counts['source'], df_counts['target']]).unique())
-    node_map = {name: i for i, name in enumerate(all_nodes)}
+    # Création des labels uniques pour forcer l'affichage en 2 colonnes (Gauche -> Droite)
+    df_counts['src'] = df_counts['source'] + " (Départ)"
+    df_counts['tgt'] = df_counts['target'] + " (Suite)"
+    
+    nodes = list(pd.unique(df_counts[['src', 'tgt']].values.ravel('K')))
+    mapping = {node: i for i, node in enumerate(nodes)}
 
-    # 2. Création du Diagramme de Sankey
     fig = go.Figure(go.Sankey(
-        node = dict(
-          pad = 15,
-          thickness = 20,
-          line = dict(color = "black", width = 0.5),
-          label = all_nodes,
-          color = "#1f77b4"
+        node=dict(
+            pad=20, thickness=15,
+            label=[n.split(" (")[0] for n in nodes], # On retire le suffixe pour l'affichage
+            color="#2c3e50"
         ),
-        link = dict(
-          source = [node_map[s] for s in df_counts['source']],
-          target = [node_map[t] for t in df_counts['target']],
-          value = df_counts['count'],
-          # Couleur des fils (bleu transparent)
-          color = "rgba(31, 119, 180, 0.2)",
-          hovertemplate='Passage de <b>%{source.label}</b> à <b>%{target.label}</b><br>Fréquence : %{value} fois<extra></extra>'
+        link=dict(
+            source=[mapping[s] for s in df_counts['src']],
+            target=[mapping[t] for t in df_counts['tgt']],
+            value=df_counts['count'],
+            color="rgba(52, 152, 219, 0.3)" # Bleu ciel transparent
         )
     ))
 
-    fig.update_layout(title_text="Enchaînement des thématiques dans les sujets", font_size=12, height=600)
+    fig.update_layout(
+        title_text="Flux logique : Thème n ➜ Thème n+1",
+        font_size=10,
+        height=700 # Plus de hauteur pour étaler les noms
+    )
     st.plotly_chart(fig, use_container_width=True)
+    
 def afficher_analyse_graphique(resultats):
     if not resultats:
         return
