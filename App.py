@@ -194,54 +194,52 @@ def afficher_analyse_graphique(resultats):
     if not resultats:
         return
 
-    # 1. Extraction et nettoyage
+    # 1. Extraction et filtrage (on enlève "Autre")
     tous_themes = []
     for s in resultats:
         themes_sujet = s['questions']['Thème'].dropna().astype(str).tolist()
         tous_themes.extend(themes_sujet)
     
     df_stats = pd.DataFrame(tous_themes, columns=['Thème'])
-    
-    # --- FILTRE : On enlève "Autre" (insensible à la casse/espaces) ---
     df_stats = df_stats[~df_stats['Thème'].str.contains('autre', case=False, na=False)]
     
-    # 2. Comptage et tri
+    # 2. Comptage
     df_counts = df_stats['Thème'].value_counts().reset_index()
     df_counts.columns = ['Thème', 'Nombre']
-    df_counts = df_counts.sort_values(by='Nombre', ascending=True) # Pour avoir le plus gros en haut
+    
+    # Calcul du % pour le survol
+    total_q = df_counts['Nombre'].sum()
+    df_counts['Proportion'] = (df_counts['Nombre'] / total_q * 100).round(1)
 
-    # 3. Création du graphique Horizontal Bar (plus "smooth" et lisible)
-    fig = px.bar(
+    # 3. Création du Treemap
+    fig = px.treemap(
         df_counts, 
-        x='Nombre', 
-        y='Thème',
-        orientation='h',
-        text='Nombre', # Affiche le chiffre sur la barre
+        path=[px.Constant("Toutes les thématiques"), 'Thème'], # Ajoute une racine pour un meilleur rendu
+        values='Nombre',
         color='Nombre',
-        color_continuous_scale='Blues', # Dégradé élégant
-        template="plotly_white"
+        color_continuous_scale='Blues',
     )
 
-    # 4. Stylisation avancée (Design & Fonts)
+    # 4. Stylisation "Smooth"
     fig.update_traces(
-        marker_line_color='rgba(0,0,0,0)', # Pas de bordures noires
-        marker_pattern_shape="",
-        textposition='outside', # Chiffre à l'extérieur pour plus de clarté
-        cliponaxis=False,
-        hovertemplate="<b>%{y}</b><br>Occurrences : %{x}<extra></extra>"
+        # Centrage du texte (Horizontal et Vertical)
+        textinfo="label+value",
+        texttemplate="<br><b>%{label}</b><br>%{value} questions",
+        textfont=dict(size=16, family="Poppins, sans-serif"),
+        # Style des blocs
+        marker=dict(pad=dict(t=0, l=0, r=0, b=0), borderwidth=2),
+        hovertemplate="<b>%{label}</b><br>Fréquence : %{value}<br>%{customdata[0]}% des résultats<extra></extra>",
+        customdata=df_counts[['Proportion']]
     )
 
     fig.update_layout(
-        showlegend=False,
-        coloraxis_showscale=False, # On cache la barre de couleur à droite
-        xaxis_title="Nombre de questions",
-        yaxis_title=None,
-        font=dict(family="Roboto, sans-serif", size=13),
-        height=400 + (len(df_counts) * 20), # S'adapte à la liste de thèmes
-        margin=dict(l=20, r=50, t=20, b=20),
-        xaxis=dict(showgrid=True, gridcolor='rgba(0,0,0,0.05)'), # Grille très discrète
-        yaxis=dict(categoryorder='total ascending')
+        margin=dict(t=10, l=10, r=10, b=10),
+        height=500,
+        coloraxis_showscale=False, # Cache la barre de couleur pour épurer
     )
+
+    # On retire le bandeau de titre gris en haut (la "racine")
+    fig.update_layout(treemapcolorway=["#ffffff"]) 
 
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
