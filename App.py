@@ -194,7 +194,7 @@ def afficher_analyse_graphique(resultats):
     if not resultats:
         return
 
-    # 1. Préparation des données : on aplatit toutes les questions de tous les sujets trouvés
+    # 1. Extraction et nettoyage
     tous_themes = []
     for s in resultats:
         themes_sujet = s['questions']['Thème'].dropna().astype(str).tolist()
@@ -202,34 +202,48 @@ def afficher_analyse_graphique(resultats):
     
     df_stats = pd.DataFrame(tous_themes, columns=['Thème'])
     
-    # On compte les occurrences
+    # --- FILTRE : On enlève "Autre" (insensible à la casse/espaces) ---
+    df_stats = df_stats[~df_stats['Thème'].str.contains('autre', case=False, na=False)]
+    
+    # 2. Comptage et tri
     df_counts = df_stats['Thème'].value_counts().reset_index()
-    df_counts.columns = ['Thème', 'Nombre de questions']
-    
-    # Calcul de la proportion (en %)
-    total_q = df_counts['Nombre de questions'].sum()
-    df_counts['Proportion (%)'] = (df_counts['Nombre de questions'] / total_q * 100).round(1)
+    df_counts.columns = ['Thème', 'Nombre']
+    df_counts = df_counts.sort_values(by='Nombre', ascending=True) # Pour avoir le plus gros en haut
 
-    # 2. Création du graphique interactif (Treemap)
-    # Le Treemap montre la proportion par la taille des rectangles
-    fig = px.treemap(
+    # 3. Création du graphique Horizontal Bar (plus "smooth" et lisible)
+    fig = px.bar(
         df_counts, 
-        path=['Thème'], 
-        values='Nombre de questions',
-        color='Nombre de questions',
-        color_continuous_scale='Blues',
-        custom_data=['Proportion (%)'],
-        title="Répartition des thématiques dans les résultats de recherche"
+        x='Nombre', 
+        y='Thème',
+        orientation='h',
+        text='Nombre', # Affiche le chiffre sur la barre
+        color='Nombre',
+        color_continuous_scale='Blues', # Dégradé élégant
+        template="plotly_white"
     )
-    
-    # Personnalisation du survol (Tooltip)
+
+    # 4. Stylisation avancée (Design & Fonts)
     fig.update_traces(
-        hovertemplate="<b>%{label}</b><br>Fréquence : %{value} questions<br>Part relative : %{customdata[0]}%"
+        marker_line_color='rgba(0,0,0,0)', # Pas de bordures noires
+        marker_pattern_shape="",
+        textposition='outside', # Chiffre à l'extérieur pour plus de clarté
+        cliponaxis=False,
+        hovertemplate="<b>%{y}</b><br>Occurrences : %{x}<extra></extra>"
     )
-    
-    fig.update_layout(margin=dict(t=30, l=10, r=10, b=10))
-    
-    st.plotly_chart(fig, use_container_width=True)
+
+    fig.update_layout(
+        showlegend=False,
+        coloraxis_showscale=False, # On cache la barre de couleur à droite
+        xaxis_title="Nombre de questions",
+        yaxis_title=None,
+        font=dict(family="Roboto, sans-serif", size=13),
+        height=400 + (len(df_counts) * 20), # S'adapte à la liste de thèmes
+        margin=dict(l=20, r=50, t=20, b=20),
+        xaxis=dict(showgrid=True, gridcolor='rgba(0,0,0,0.05)'), # Grille très discrète
+        yaxis=dict(categoryorder='total ascending')
+    )
+
+    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
 # --- BARRE LATÉRALE ---
 def classifier_concours(nom_sujet):
