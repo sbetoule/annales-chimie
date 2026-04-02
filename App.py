@@ -1,8 +1,5 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
-import networkx as nx
 
 # Configuration de la page
 st.set_page_config(
@@ -192,124 +189,6 @@ with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
         st.markdown("**3. Analyse**"); st.info("⬇️ Les questions ciblées apparaîtront en bleu dans les détails et les changements de partie en pointillés.")
     st.markdown("<p class='cpge-warning'>⚠️ La liste des thématiques correspond au contenu des programmes de CPGE. Des niveaux de difficulté sont indiqués par rapport à un élève de CPGE. Ces derniers sont purement indicatifs et propres à l'interprétation des concepteurs de ce site.</p>", unsafe_allow_html=True)
 
-def afficher_reseau_thematique(resultats):
-    couples = []
-    for s in resultats:
-        themes = [t.strip() for t in s['questions']['Thème'].dropna().astype(str).tolist() 
-                  if "autre" not in t.lower() and t.strip() != ""]
-        for i in range(len(themes) - 1):
-            if themes[i] != themes[i+1]: # On ne garde que les changements de thèmes
-                couples.append((themes[i], themes[i+1]))
-
-    if not couples:
-        return
-
-    # Comptage des liaisons
-    df_links = pd.DataFrame(couples, columns=['source', 'target'])
-    df_counts = df_links.groupby(['source', 'target']).size().reset_index(name='weight')
-    
-    # Filtrage pour la clarté (Top liaisons)
-    seuil = st.slider("Densité du cercle (min. occurrences)", 1, int(df_counts['weight'].max()), 1)
-    df_counts = df_counts[df_counts['weight'] >= seuil]
-
-    # Création du graphe avec NetworkX pour calculer la disposition en cercle
-    G = nx.from_pandas_edgelist(df_counts, 'source', 'target', ['weight'])
-    pos = nx.circular_layout(G) # L'astuce est ici : disposition en CERCLE
-
-    # Création des fils (Edges)
-    edge_traces = []
-    for edge in G.edges(data=True):
-        x0, y0 = pos[edge[0]]
-        x1, y1 = pos[edge[1]]
-        weight = edge[2]['weight']
-        edge_traces.append(go.Scatter(
-            x=[x0, x1, None], y=[y0, y1, None],
-            line=dict(width=weight*2, color='rgba(52, 152, 219, 0.2)'),
-            hoverinfo='none', mode='lines'
-        ))
-
-    # Création des points (Nodes)
-    node_x, node_y, node_text = [], [], []
-    for node in G.nodes():
-        x, y = pos[node]
-        node_x.append(x)
-        node_y.append(y)
-        node_text.append(node)
-
-    node_trace = go.Scatter(
-        x=node_x, y=node_y, mode='markers+text',
-        text=node_text, textposition="top center",
-        marker=dict(size=15, color='#2c3e50', line_width=2),
-        hoverinfo='text'
-    )
-
-    fig = go.Figure(data=edge_traces + [node_trace])
-    fig.update_layout(
-        showlegend=False,
-        height=700,
-        margin=dict(b=20, l=5, r=5, t=40),
-        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-        plot_bgcolor='white'
-    )
-    
-    st.plotly_chart(fig, use_container_width=True)
-    
-def afficher_analyse_graphique(resultats):
-    if not resultats:
-        return
-
-    # 1. Nettoyage des données
-    tous_themes = []
-    for s in resultats:
-        themes_sujet = s['questions']['Thème'].dropna().astype(str).tolist()
-        tous_themes.extend(themes_sujet)
-    
-    df_stats = pd.DataFrame(tous_themes, columns=['Thème'])
-    df_stats = df_stats[~df_stats['Thème'].str.contains('autre', case=False, na=False)]
-    df_stats = df_stats[df_stats['Thème'].str.strip() != ""]
-    
-    if df_stats.empty:
-        return
-
-    # 2. Préparation des données
-    df_counts = df_stats['Thème'].value_counts().reset_index()
-    df_counts.columns = ['Thème', 'Nombre']
-
-    # 3. Création du Graphique avec Retours à la ligne et Marges
-    fig = go.Figure(go.Treemap(
-        labels=df_counts['Thème'],
-        parents=[""] * len(df_counts),
-        values=df_counts['Nombre'],
-        # On utilise <br> pour forcer le retour à la ligne et du HTML pour le style
-        texttemplate=(
-            "<br><b>%{label}</b><br><br>"
-            "<span style='font-size:22px; opacity:0.8'>%{value}</span><br>"
-            "<span style='font-size:12px'>QUESTIONS</span>"
-        ),
-        textposition="middle center",
-        hovertemplate="<b>%{label}</b><br>Total : %{value} questions<extra></extra>",
-        marker=dict(
-            colors=df_counts['Nombre'],
-            colorscale='Blues',
-            # 'pad' crée l'espace entre les blocs (les marges)
-            pad=dict(b=10, l=10, r=10, t=10), 
-            line=dict(width=3, color='white')
-        ),
-    ))
-
-    # 4. Ajustements Cosmétiques
-    fig.update_layout(
-        margin=dict(t=10, l=10, r=10, b=10),
-        height=500,
-        # Uniformise la police pour tout le graphique
-        font=dict(family="Arial, sans-serif", color="white"),
-        # Cache la barre de couleur pour un look plus "App"
-        coloraxis_showscale=False
-    )
-
-    # Supprime les interactions inutiles pour garder le focus sur la lecture
-    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 # --- BARRE LATÉRALE ---
 def classifier_concours(nom_sujet):
     nom = str(nom_sujet).upper()
@@ -485,16 +364,6 @@ if st.session_state.resultats_recherche:
     nb = len(st.session_state.resultats_recherche)
     label_sujet = "sujet trouvé" if nb == 1 else "sujets trouvés"
     st.success(f"✅ {nb} {label_sujet}")
-
-    with st.expander("📊 Analyses avancées", expanded=False):
-        tab1, tab2 = st.tabs(["Répartition (Carrés)", "Enchaînements (Fils)"])
-        
-        with tab1:
-            afficher_analyse_graphique(st.session_state.resultats_recherche)
-            
-        with tab2:
-            st.markdown("Ce graphique montre comment les thèmes s'enchaînent au sein des questions.")
-            afficher_reseau_thematique(st.session_state.resultats_recherche)
 
     for idx, r in enumerate(st.session_state.resultats_recherche):
         # On utilise une flèche ou un séparateur pour bien distinguer les deux parties
