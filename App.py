@@ -473,14 +473,14 @@ if st.session_state.resultats_recherche:
     st.success(f"✅ {nb} {label_sujet}")
 
     with st.expander("📊 Analyses avancées", expanded=False):
-    tab1, tab2 = st.tabs(["Répartition (Carrés)", "Enchaînements (Fils)"])
-    
-    with tab1:
-        afficher_analyse_graphique(st.session_state.resultats_recherche)
+        tab1, tab2 = st.tabs(["Répartition (Carrés)", "Enchaînements (Fils)"])
         
-    with tab2:
-        st.markdown("Ce graphique montre comment les thèmes s'enchaînent au sein des questions.")
-        afficher_flux_thematiques(st.session_state.resultats_recherche)
+        with tab1:
+            afficher_analyse_graphique(st.session_state.resultats_recherche)
+            
+        with tab2:
+            st.markdown("Ce graphique montre comment les thèmes s'enchaînent au sein des questions.")
+            afficher_flux_thematiques(st.session_state.resultats_recherche)
 
     for idx, r in enumerate(st.session_state.resultats_recherche):
         # On utilise une flèche ou un séparateur pour bien distinguer les deux parties
