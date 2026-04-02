@@ -190,44 +190,74 @@ with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
     with c3:
         st.markdown("**3. Analyse**"); st.info("⬇️ Les questions ciblées apparaîtront en bleu dans les détails et les changements de partie en pointillés.")
     st.markdown("<p class='cpge-warning'>⚠️ La liste des thématiques correspond au contenu des programmes de CPGE. Des niveaux de difficulté sont indiqués par rapport à un élève de CPGE. Ces derniers sont purement indicatifs et propres à l'interprétation des concepteurs de ce site.</p>", unsafe_allow_html=True)
+
 def afficher_flux_thematiques(resultats):
-    # ... (récupération des couples identique) ...
+    # --- SÉCURITÉ 1 : Initialisation systématique ---
+    couples = [] 
     
+    if not resultats:
+        st.info("Lancez une recherche pour voir les enchaînements.")
+        return
+
+    # Extraction des transitions
+    for s in resultats:
+        if 'questions' in s and not s['questions'].empty:
+            themes = s['questions']['Thème'].dropna().astype(str).tolist()
+            # Nettoyage : on enlève "Autre" et les espaces
+            themes = [t.strip() for t in themes if "autre" not in t.lower() and t.strip() != ""]
+            
+            # Création des paires n -> n+1
+            for i in range(len(themes) - 1):
+                couples.append({'source': themes[i], 'target': themes[i+1]})
+
+    # --- SÉCURITÉ 2 : Vérification si on a trouvé des données ---
+    if not couples:
+        st.warning("Pas assez de transitions thématiques trouvées dans ces sujets.")
+        return
+
     df_flux = pd.DataFrame(couples)
+    
+    # Comptage des occurrences
     df_counts = df_flux.groupby(['source', 'target']).size().reset_index(name='count')
     
-    # --- FILTRE DE CLARTÉ : On ne garde que les transitions fréquentes ---
-    # On peut même mettre un slider Streamlit ici pour laisser l'utilisateur choisir
-    seuil = st.slider("Filtrer la complexité (min. occurrences)", 1, 5, 2)
+    # --- NETTOYAGE VISUEL (Slider pour la clarté) ---
+    max_fonds = int(df_counts['count'].max())
+    seuil = st.slider("Filtrer les liens faibles (min. occurrences)", 1, max_fonds, 1)
     df_counts = df_counts[df_counts['count'] >= seuil]
 
-    # Création des labels uniques pour forcer l'affichage en 2 colonnes (Gauche -> Droite)
-    df_counts['src'] = df_counts['source'] + " (Départ)"
-    df_counts['tgt'] = df_counts['target'] + " (Suite)"
+    if df_counts.empty:
+        st.info("Augmentez le nombre de sujets ou baissez le curseur pour voir des liens.")
+        return
+
+    # --- ASTUCE DES 2 COLONNES : Source à gauche, Cible à droite ---
+    df_counts['src_label'] = df_counts['source'] + "  " # Un espace pour différencier
+    df_counts['tgt_label'] = " " + df_counts['target'] # Un espace avant pour différencier
     
-    nodes = list(pd.unique(df_counts[['src', 'tgt']].values.ravel('K')))
+    nodes = list(pd.unique(df_counts[['src_label', 'tgt_label']].values.ravel('K')))
     mapping = {node: i for i, node in enumerate(nodes)}
 
     fig = go.Figure(go.Sankey(
         node=dict(
-            pad=20, thickness=15,
-            label=[n.split(" (")[0] for n in nodes], # On retire le suffixe pour l'affichage
-            color="#2c3e50"
+            pad=30, thickness=20,
+            line=dict(color="white", width=2),
+            label=[n.strip() for n in nodes],
+            color="#3498db"
         ),
         link=dict(
-            source=[mapping[s] for s in df_counts['src']],
-            target=[mapping[t] for t in df_counts['tgt']],
+            source=[mapping[s] for s in df_counts['src_label']],
+            target=[mapping[t] for t in df_counts['tgt_label']],
             value=df_counts['count'],
-            color="rgba(52, 152, 219, 0.3)" # Bleu ciel transparent
+            color="rgba(52, 152, 219, 0.2)"
         )
     ))
 
     fig.update_layout(
-        title_text="Flux logique : Thème n ➜ Thème n+1",
-        font_size=10,
-        height=700 # Plus de hauteur pour étaler les noms
+        title_text="Logique d'enchaînement (Gauche: Thème N ➜ Droite: Thème N+1)",
+        height=800, # On donne de l'air pour éviter les spaghettis
+        font_size=12
     )
-    st.plotly_chart(fig, use_container_width=True)
+    
+    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
     
 def afficher_analyse_graphique(resultats):
     if not resultats:
