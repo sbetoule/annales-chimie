@@ -194,54 +194,50 @@ def afficher_analyse_graphique(resultats):
     if not resultats:
         return
 
-    # 1. Extraction et filtrage (on enlève "Autre")
+    # 1. Extraction et nettoyage
     tous_themes = []
     for s in resultats:
         themes_sujet = s['questions']['Thème'].dropna().astype(str).tolist()
         tous_themes.extend(themes_sujet)
     
     df_stats = pd.DataFrame(tous_themes, columns=['Thème'])
+    
+    # Nettoyage strict (on enlève "Autre" et les lignes vides)
     df_stats = df_stats[~df_stats['Thème'].str.contains('autre', case=False, na=False)]
+    df_stats = df_stats[df_stats['Thème'].str.strip() != ""]
     
     if df_stats.empty:
-        st.info("Aucune donnée statistique à afficher (hors thèmes 'Autre').")
         return
 
-    # 2. Comptage
+    # 2. Préparation des comptes
     df_counts = df_stats['Thème'].value_counts().reset_index()
     df_counts.columns = ['Thème', 'Nombre']
-    
-    # 3. Création du Treemap sans "path" complexe pour éviter les erreurs de mapping
-    fig = px.treemap(
-        df_counts, 
-        path=[px.Constant("Analyses"), 'Thème'], 
-        values='Nombre',
-        color='Nombre',
-        color_continuous_scale='Blues',
-    )
 
-    # 4. Stylisation "Smooth" et Sécurisée
-    # On calcule la proportion directement dans le hover pour éviter l'erreur de customdata
-    total_q = df_counts['Nombre'].sum()
-    
-    fig.update_traces(
+    # 3. Création du Treemap en mode "Flat" (Sans hiérarchie instable)
+    import plotly.graph_objects as go
+
+    fig = go.Figure(go.Treemap(
+        labels=df_counts['Thème'],
+        parents=[""] * len(df_counts), # Pas de parent pour éviter le bloc gris vide
+        values=df_counts['Nombre'],
         textinfo="label+value",
-        texttemplate="<br><b>%{label}</b><br>%{value} questions",
-        textfont=dict(size=16, family="Poppins, sans-serif"),
-        marker=dict(borderwidth=2),
-        # On simplifie le hover pour éviter le conflit de taille de liste
-        hovertemplate="<b>%{label}</b><br>Occurrences : %{value}<extra></extra>"
-    )
+        texttemplate="<br><b>%{label}</b><br><span style='font-size:20px'>%{value}</span>",
+        hovertemplate="<b>%{label}</b><br>Occurrences : %{value}<extra></extra>",
+        marker=dict(
+            colors=df_counts['Nombre'],
+            colorscale='Blues',
+            line=dict(width=2, color='white')
+        ),
+        # Centrage du texte
+        textfont=dict(size=15, family="Poppins, sans-serif"),
+    ))
 
+    # 4. Mise en page
     fig.update_layout(
-        margin=dict(t=30, l=10, r=10, b=10),
+        margin=dict(t=10, l=10, r=10, b=10),
         height=450,
-        coloraxis_showscale=False,
         template="plotly_white"
     )
-
-    # Supprime la barre grise de titre en haut
-    fig.update_layout(treemapcolorway=["#ffffff"]) 
 
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
