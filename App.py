@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import networkx as nx
 
 # Configuration de la page
 st.set_page_config(
@@ -191,73 +192,68 @@ with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
         st.markdown("**3. Analyse**"); st.info("⬇️ Les questions ciblées apparaîtront en bleu dans les détails et les changements de partie en pointillés.")
     st.markdown("<p class='cpge-warning'>⚠️ La liste des thématiques correspond au contenu des programmes de CPGE. Des niveaux de difficulté sont indiqués par rapport à un élève de CPGE. Ces derniers sont purement indicatifs et propres à l'interprétation des concepteurs de ce site.</p>", unsafe_allow_html=True)
 
-def afficher_flux_thematiques(resultats):
-    # --- SÉCURITÉ 1 : Initialisation systématique ---
-    couples = [] 
-    
-    if not resultats:
-        st.info("Lancez une recherche pour voir les enchaînements.")
-        return
-
-    # Extraction des transitions
+def afficher_reseau_thematique(resultats):
+    couples = []
     for s in resultats:
-        if 'questions' in s and not s['questions'].empty:
-            themes = s['questions']['Thème'].dropna().astype(str).tolist()
-            # Nettoyage : on enlève "Autre" et les espaces
-            themes = [t.strip() for t in themes if "autre" not in t.lower() and t.strip() != ""]
-            
-            # Création des paires n -> n+1
-            for i in range(len(themes) - 1):
-                couples.append({'source': themes[i], 'target': themes[i+1]})
+        themes = [t.strip() for t in s['questions']['Thème'].dropna().astype(str).tolist() 
+                  if "autre" not in t.lower() and t.strip() != ""]
+        for i in range(len(themes) - 1):
+            if themes[i] != themes[i+1]: # On ne garde que les changements de thèmes
+                couples.append((themes[i], themes[i+1]))
 
-    # --- SÉCURITÉ 2 : Vérification si on a trouvé des données ---
     if not couples:
-        st.warning("Pas assez de transitions thématiques trouvées dans ces sujets.")
         return
 
-    df_flux = pd.DataFrame(couples)
+    # Comptage des liaisons
+    df_links = pd.DataFrame(couples, columns=['source', 'target'])
+    df_counts = df_links.groupby(['source', 'target']).size().reset_index(name='weight')
     
-    # Comptage des occurrences
-    df_counts = df_flux.groupby(['source', 'target']).size().reset_index(name='count')
-    
-    # --- NETTOYAGE VISUEL (Slider pour la clarté) ---
-    max_fonds = int(df_counts['count'].max())
-    seuil = st.slider("Filtrer les liens faibles (min. occurrences)", 1, max_fonds, 1)
-    df_counts = df_counts[df_counts['count'] >= seuil]
+    # Filtrage pour la clarté (Top liaisons)
+    seuil = st.slider("Densité du cercle (min. occurrences)", 1, int(df_counts['weight'].max()), 1)
+    df_counts = df_counts[df_counts['weight'] >= seuil]
 
-    if df_counts.empty:
-        st.info("Augmentez le nombre de sujets ou baissez le curseur pour voir des liens.")
-        return
+    # Création du graphe avec NetworkX pour calculer la disposition en cercle
+    G = nx.from_pandas_edgelist(df_counts, 'source', 'target', ['weight'])
+    pos = nx.circular_layout(G) # L'astuce est ici : disposition en CERCLE
 
-    # --- ASTUCE DES 2 COLONNES : Source à gauche, Cible à droite ---
-    df_counts['src_label'] = df_counts['source'] + "  " # Un espace pour différencier
-    df_counts['tgt_label'] = " " + df_counts['target'] # Un espace avant pour différencier
-    
-    nodes = list(pd.unique(df_counts[['src_label', 'tgt_label']].values.ravel('K')))
-    mapping = {node: i for i, node in enumerate(nodes)}
+    # Création des fils (Edges)
+    edge_traces = []
+    for edge in G.edges(data=True):
+        x0, y0 = pos[edge[0]]
+        x1, y1 = pos[edge[1]]
+        weight = edge[2]['weight']
+        edge_traces.append(go.Scatter(
+            x=[x0, x1, None], y=[y0, y1, None],
+            line=dict(width=weight*2, color='rgba(52, 152, 219, 0.2)'),
+            hoverinfo='none', mode='lines'
+        ))
 
-    fig = go.Figure(go.Sankey(
-        node=dict(
-            pad=30, thickness=20,
-            line=dict(color="white", width=2),
-            label=[n.strip() for n in nodes],
-            color="#3498db"
-        ),
-        link=dict(
-            source=[mapping[s] for s in df_counts['src_label']],
-            target=[mapping[t] for t in df_counts['tgt_label']],
-            value=df_counts['count'],
-            color="rgba(52, 152, 219, 0.2)"
-        )
-    ))
+    # Création des points (Nodes)
+    node_x, node_y, node_text = [], [], []
+    for node in G.nodes():
+        x, y = pos[node]
+        node_x.append(x)
+        node_y.append(y)
+        node_text.append(node)
 
+    node_trace = go.Scatter(
+        x=node_x, y=node_y, mode='markers+text',
+        text=node_text, textposition="top center",
+        marker=dict(size=15, color='#2c3e50', line_width=2),
+        hoverinfo='text'
+    )
+
+    fig = go.Figure(data=edge_traces + [node_trace])
     fig.update_layout(
-        title_text="Logique d'enchaînement (Gauche: Thème N ➜ Droite: Thème N+1)",
-        height=800, # On donne de l'air pour éviter les spaghettis
-        font_size=12
+        showlegend=False,
+        height=700,
+        margin=dict(b=20, l=5, r=5, t=40),
+        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        plot_bgcolor='white'
     )
     
-    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+    st.plotly_chart(fig, use_container_width=True)
     
 def afficher_analyse_graphique(resultats):
     if not resultats:
