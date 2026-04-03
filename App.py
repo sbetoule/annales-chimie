@@ -185,22 +185,21 @@ def formater_nom_theme(nom, largeur=15):
     lignes = textwrap.wrap(nom, width=largeur, break_long_words=False)
     return "<br>".join(lignes)
 
+import time # Import nécessaire pour le délai de l'animation
+
 def afficher_mind_map_thematique(resultats):
     if not resultats:
         return
 
+    # --- 1. CALCULS (Identique à ton code) ---
     counts = {}
     adjacence = {}
-
-    # --- 1. CALCUL DE L'ADJACENCE ET DES COMPTAGES (Par Partie) ---
     for s in resultats:
         df_q = s['questions']
         groupes = df_q.groupby('Partie') if 'Partie' in df_q.columns else [("Unique", df_q)]
-        
         for _, data_partie in groupes:
             themes = [t.strip() for t in data_partie['Thème'].dropna().astype(str).tolist() 
                       if "autre" not in t.lower() and t.strip() != ""]
-            
             for i in range(len(themes)):
                 t = themes[i]
                 counts[t] = counts.get(t, 0) + 1
@@ -210,100 +209,95 @@ def afficher_mind_map_thematique(resultats):
                         pair = tuple(sorted((t, t_next)))
                         adjacence[pair] = adjacence.get(pair, 0) + 1
 
-    if not counts:
-        return
+    if not counts: return
 
-    # --- 2. CONSTRUCTION DU GRAPHE ---
+    # --- 2. CONSTRUCTION DU GRAPHE COMPLET (Calcul des positions en une fois) ---
     G = nx.Graph()
     G.add_node("CHIMIE", cat="ROOT", label="<b>CHIMIE</b>")
     G.add_node("CHIMIE ORGANIQUE", cat="ORGA_HUB", label="<b>CHIMIE<br>ORGANIQUE</b>")
     G.add_node("CHIMIE GÉNÉRALE", cat="GEN_HUB", label="<b>CHIMIE<br>GÉNÉRALE</b>")
-    
     G.add_edge("CHIMIE", "CHIMIE ORGANIQUE", weight=3)
     G.add_edge("CHIMIE", "CHIMIE GÉNÉRALE", weight=3)
 
     for t, count in counts.items():
         cat = DICT_CATEGORIES.get(t, "AUTRE").upper()
         G.add_node(t, cat=cat, count=count, label=formater_nom_theme(t))
-        
-        if cat == "ORGA":
-            G.add_edge("CHIMIE ORGANIQUE", t, weight=1.5)
-        elif cat == "GENERALE":
-            G.add_edge("CHIMIE GÉNÉRALE", t, weight=1.5)
-        else:
-            G.add_edge("CHIMIE", t, weight=1.0)
+        if cat == "ORGA": G.add_edge("CHIMIE ORGANIQUE", t, weight=1.5)
+        elif cat == "GENERALE": G.add_edge("CHIMIE GÉNÉRALE", t, weight=1.5)
+        else: G.add_edge("CHIMIE", t, weight=1.0)
 
     for (u, v), w in adjacence.items():
-        if u in G and v in G:
-            G.add_edge(u, v, weight=w * 0.5)
+        if u in G and v in G: G.add_edge(u, v, weight=w * 0.5)
 
-    # --- 3. POSITIONNEMENT ---
-    init_pos = {"CHIMIE": (0, 0), "CHIMIE ORGANIQUE": (0, 0.4), "CHIMIE GÉNÉRALE": (0, -0.4)}
-    pos = nx.spring_layout(G, k=1.3/np.sqrt(len(G.nodes())), pos=init_pos, iterations=150, seed=42)
+    # Calcul des positions finales pour que les bulles ne bougent pas pendant l'apparition
+    pos = nx.spring_layout(G, k=1.3/np.sqrt(len(G.nodes())), iterations=150, seed=42)
 
-    # --- 4. PRÉPARATION DU RENDU (Couleurs, Tailles & Hover) ---
-    max_q = max(counts.values()) if counts else 1
-    node_x, node_y, node_text, node_color, node_size, hover_text = [], [], [], [], [], []
+    # --- 3. ANIMATION DE CHARGEMENT PROGRESSIF ---
+    placeholder = st.empty() # Conteneur qui sera mis à jour
+    tous_les_noeuds = list(G.nodes())
+    # On définit l'ordre d'apparition : d'abord les HUBs, puis les thèmes
+    hubs = ["CHIMIE", "CHIMIE ORGANIQUE", "CHIMIE GÉNÉRALE"]
+    themes_restants = [n for n in tous_les_noeuds if n not in hubs]
     
-    for n in G.nodes():
-        node_x.append(pos[n][0])
-        node_y.append(pos[n][1])
-        node_text.append(G.nodes[n].get('label', ''))
+    # On fait apparaître les thèmes par groupes (5 étapes)
+    steps = 5
+    chunks = np.array_split(themes_restants, steps)
+    noeuds_visibles = hubs.copy()
+
+    for i in range(steps + 1):
+        if i > 0:
+            noeuds_visibles.extend(chunks[i-1].tolist())
         
-        cat = G.nodes[n].get('cat')
-        q = G.nodes[n].get('count', 0)
-        ratio = q / max_q
+        # Création de la figure pour cette étape
+        fig = go.Figure()
         
-        # Masquage des questions pour les thèmes structurels
-        if cat in ["ROOT", "ORGA_HUB", "GEN_HUB"]:
-            hover_text.append(f"<b>{n}</b>")
-            node_size.append(45 if cat=="ROOT" else 32)
-            node_color.append("#fc6076" if cat=="ROOT" else ("#7a7aff" if "ORGA" in cat else "#ffb366"))
-        else:
-            hover_text.append(f"<b>{n}</b><br>{q} questions")
-            node_size.append(22)
-            if cat == "ORGA":
-                node_color.append("#0000bb" if ratio > 0.6 else "#7a7aff" if ratio > 0.2 else "#d1d1ff")
-            elif cat == "GENERALE":
-                node_color.append("#e67e00" if ratio > 0.6 else "#ffb366" if ratio > 0.2 else "#ffe8cc")
+        # Filtrer les liens pour n'afficher que ceux entre nœuds visibles
+        edge_x, edge_y = [], []
+        for u, v in G.edges():
+            if u in noeuds_visibles and v in noeuds_visibles:
+                edge_x.extend([pos[u][0], pos[v][0], None])
+                edge_y.extend([pos[u][1], pos[v][1], None])
+
+        fig.add_trace(go.Scatter(x=edge_x, y=edge_y, line=dict(width=0.3, color='rgba(200, 200, 200, 0.4)'), mode='lines', hoverinfo='none'))
+
+        # Filtrer les nœuds
+        nx_v, ny_v, nt_v, nc_v, ns_v, nh_v = [], [], [], [], [], []
+        max_q = max(counts.values()) if counts else 1
+
+        for n in noeuds_visibles:
+            nx_v.append(pos[n][0]); ny_v.append(pos[n][1])
+            nt_v.append(G.nodes[n].get('label', ''))
+            cat = G.nodes[n].get('cat')
+            q = G.nodes[n].get('count', 0)
+            
+            if cat in ["ROOT", "ORGA_HUB", "GEN_HUB"]:
+                ns_v.append(45 if cat=="ROOT" else 32)
+                nc_v.append("#fc6076" if cat=="ROOT" else ("#7a7aff" if "ORGA" in cat else "#ffb366"))
+                nh_v.append(f"<b>{n}</b>")
             else:
-                node_color.append("#dfe6e9")
+                ns_v.append(22)
+                ratio = q / max_q
+                if cat == "ORGA": nc_v.append("#0000bb" if ratio > 0.6 else "#7a7aff")
+                elif cat == "GENERALE": nc_v.append("#e67e00" if ratio > 0.6 else "#ffb366")
+                else: nc_v.append("#dfe6e9")
+                nh_v.append(f"<b>{n}</b><br>{q} questions")
 
-    # --- 5. CALCUL DES LIGNES (Crucial pour éviter NameError) ---
-    edge_x, edge_y = [], []
-    for u, v in G.edges():
-        edge_x.extend([pos[u][0], pos[v][0], None])
-        edge_y.extend([pos[u][1], pos[v][1], None])
+        fig.add_trace(go.Scatter(
+            x=nx_v, y=ny_v, mode='markers+text', text=nt_v, textposition="top center",
+            textfont=dict(size=11, family="Segoe UI, Arial", color="black"),
+            marker=dict(color=nc_v, size=ns_v, line=dict(width=1, color='white')),
+            hoverinfo='text', hovertext=nh_v
+        ))
 
-    # --- 6. CRÉATION FIGURE ---
-    fig = go.Figure()
+        fig.update_layout(
+            showlegend=False, height=600, margin=dict(t=0, b=0, l=0, r=0),
+            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-1.2, 1.2]),
+            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-1.2, 1.2]),
+            template="plotly_white", dragmode='pan'
+        )
 
-    # Ajout des liens
-    fig.add_trace(go.Scatter(
-        x=edge_x, y=edge_y, 
-        line=dict(width=0.3, color='rgba(220, 220, 220, 0.4)'), 
-        hoverinfo='none', mode='lines'
-    ))
-
-    # Ajout des nœuds
-    fig.add_trace(go.Scatter(
-        x=node_x, y=node_y, mode='markers+text',
-        text=node_text, textposition="top center",
-        textfont=dict(size=11, family="Segoe UI, Inter, Arial, sans-serif", color="black"),
-        marker=dict(color=node_color, size=node_size, line=dict(width=1.2, color='white')),
-        hoverinfo='text', hovertext=hover_text
-    ))
-
-    fig.update_layout(
-        showlegend=False, height=800,
-        margin=dict(t=0, b=0, l=0, r=0),
-        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-1.15, 1.15]),
-        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-1.15, 1.15]),
-        template="plotly_white",
-        dragmode='pan'
-    )
-    
-    st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True, 'displayModeBar': False})
+        placeholder.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}, key=f"anim_{i}")
+        time.sleep(0.3) # Vitesse de l'apparition
     
 # --- CHARGEMENT INITIAL POUR LES BORNES DE DATE ---
 data_full = charger_donnees(URL_CSV)
