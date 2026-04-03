@@ -178,11 +178,12 @@ def formater_nom_theme(nom, largeur=20):
     return "<br>".join(lignes)
 
 def afficher_mind_map_thematique(resultats):
-    if not resultats: return
+    if not resultats:
+        return
 
-    # --- 1. COMPTAGE ET ADJACENCE ---
-    counts = {}
+    # --- 1. PRÉPARATION DES DONNÉES D'AFFINITÉ (Inchangé) ---
     adjacence = {}
+    counts = {}
     for s in resultats:
         themes = [t.strip() for t in s['questions']['Thème'].dropna().astype(str).tolist() 
                   if "autre" not in t.lower() and t.strip() != ""]
@@ -195,89 +196,101 @@ def afficher_mind_map_thematique(resultats):
                     pair = tuple(sorted((t, t_next)))
                     adjacence[pair] = adjacence.get(pair, 0) + 1
 
-    # --- 2. CONSTRUCTION DU GRAPHE ---
-    G = nx.Graph()
-    G.add_node("CHIMIE", size=45, category="CENTRE") # Taille fixe réduite pour le centre
+    if not counts:
+        return
 
+    # --- 2. CRÉATION DU GRAPHE NETWORKX ---
+    G = nx.Graph()
+    G.add_node("CHIMIE", size=max(counts.values())*1.5, type='root')
+    
     for t, size in counts.items():
-        cat = DICT_CATEGORIES.get(t, "AUTRE").upper()
-        G.add_node(t, size=size, category=cat)
+        G.add_node(t, size=size, type='theme')
+        # Force de base vers le centre
         G.add_edge("CHIMIE", t, weight=0.1)
 
     for (u, v), weight in adjacence.items():
         if u in G and v in G:
-            G.add_edge(u, v, weight=weight * 0.3)
+            G.add_edge(u, v, weight=weight)
 
-    # --- 3. POSITIONNEMENT (Évite la fuite des bulles) ---
-    init_pos = {"CHIMIE": (0, 0)}
-    fixed_nodes = ["CHIMIE"]
+    # --- 3. CALCUL DU POSITIONNEMENT (Spring Layout compact) ---
+    # k=1.0 pour rapprocher les nœuds et compacter le graphe
+    pos = nx.spring_layout(G, k=1.0/np.sqrt(len(G.nodes())), iterations=50, seed=42)
+
+    # --- 4. PRÉPARATION DES TRACÉS PLOTLY ---
     
-    for node, data in G.nodes(data=True):
-        if node == "CHIMIE": continue
-        if data['category'] == "ORGA":
-            init_pos[node] = (np.random.uniform(-0.3, 0.3), 0.8)
-        elif data['category'] == "GENERALE":
-            init_pos[node] = (np.random.uniform(-0.3, 0.3), -0.8)
+    # 4a. Les liens (Fils discrets)
+    edge_x, edge_y = [], []
+    for edge in G.edges():
+        x0, y0 = pos[edge[0]]
+        x1, y1 = pos[edge[1]]
+        edge_x.extend([x0, x1, None])
+        edge_y.extend([y0, y1, None])
 
-    # k=1.0 réduit la distance entre les bulles par rapport à k=1.8 ou 2.0
-    pos = nx.spring_layout(G, k=1.2/np.sqrt(len(G.nodes())), pos=init_pos, fixed=fixed_nodes, iterations=80)
+    edge_trace = go.Scatter(
+        x=edge_x, y=edge_y, 
+        line=dict(width=0.5, color='#dcdde1'), 
+        hoverinfo='none', mode='lines'
+    )
 
-    # --- 4. PRÉPARATION DU RENDU ---
-    colors = {"ORGA": "#a29bfe", "GENERALE": "#ffcb8e", "CENTRE": "#fc6076", "AUTRE": "#dfe6e9"}
+    # 4b. Les bulles (Nodes) - Logique de couleur dégradée
+    node_x, node_y, node_text, node_color, node_size = [], [], [], [], []
+    
+    # Échelle de couleur personnalisée : Bleu clair -> Bleu foncé
+    # 'Algae' est un bon dégradé vert/bleu qui va du clair au foncé
+    colorscale_theme = 'Blues' 
+    
+    # Pour normaliser les couleurs (0 à 1)
+    max_count = max(counts.values()) if counts else 1
 
-    node_x, node_y, node_text, node_size, node_color = [], [], [], [], []
     for node in G.nodes():
         x, y = pos[node]
         node_x.append(x)
         node_y.append(y)
         
-        cat = G.nodes[node]['category']
-        node_color.append(colors.get(cat, colors["AUTRE"]))
+        # Formatage du texte pour le survol
+        node_text.append(f"<b>{node}</b><br>{counts.get(node, '')} questions")
         
-        # --- RÉDUCTION TAILLE BULLES ---
-        # Utilisation de log2 pour une compression plus forte que log1p
-        s = counts.get(node, 1)
+        # Style des nœuds
         if node == "CHIMIE":
-            node_size.append(40)
+            node_size.append(35) # Taille fixe moyenne
+            node_color.append("#fc6076") # Rouge Logo fixe
         else:
-            # Taille minimum 10, croissance très lente
-            node_size.append(10 + np.log2(s + 1) * 8)
-        
-        # --- RETOUR À LA LIGNE ---
-        if node == "CHIMIE" or counts.get(node, 0) > 1:
-            node_text.append(formater_nom_theme(node))
-        else:
-            node_text.append("")
-
-    # Tracé des liens
-    edge_x, edge_y = [], []
-    for u, v in G.edges():
-        x0, y0 = pos[u]
-        x1, y1 = pos[v]
-        edge_x.extend([x0, x1, None])
-        edge_y.extend([y0, y1, None])
-    
-    edge_trace = go.Scatter(x=edge_x, y=edge_y, line=dict(width=0.4, color='#ecf0f1'), hoverinfo='none', mode='lines')
+            node_size.append(25) # Toutes les bulles thématiques ont la même taille
+            # La couleur dépend du nombre de questions
+            count = counts.get(node, 0)
+            node_color.append(count / max_count) # Valeur normalisée entre 0 et 1
 
     node_trace = go.Scatter(
         x=node_x, y=node_y, mode='markers+text',
-        text=node_text, textposition="top center",
-        textfont=dict(size=10, family="Arial Narrow"), # Police condensée pour gagner de la place
-        hoverinfo='text', hovertext=[f"{n} ({counts.get(n, 0)} q.)" for n in G.nodes()],
-        marker=dict(color=node_color, size=node_size, line=dict(width=1, color='white'))
+        # N'affiche le texte que pour les bulles importantes pour éviter le chaos
+        text=[n if counts.get(n, 0) > max_count/3 or n == "CHIMIE" else "" for n in G.nodes()],
+        textposition="bottom center",
+        hoverinfo='text', hovertext=node_text,
+        marker=dict(
+            showscale=False, # Cache la légende de l'échelle de couleur
+            colorscale=colorscale_theme,
+            color=node_color, # Liste des valeurs normalisées
+            size=node_size,
+            line=dict(width=2, color='white')
+        )
     )
 
+    # --- 5. CONFIGURATION DE LA MISE EN PAGE POUR LE ZOOM AUTO MAXIMAL ---
     fig = go.Figure(data=[edge_trace, node_trace],
                  layout=go.Layout(
-                    showlegend=False, height=650, template="plotly_white",
+                    showlegend=False,
+                    # Supprime les grilles, zéros et étiquettes d'axe
                     xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
                     yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                    margin=dict(t=20, b=20, l=10, r=10),
-                    # Empêche le zoom auto d'aller trop loin
-                    xaxis_range=[-1.2, 1.2], yaxis_range=[-1.2, 1.2] 
+                    # Marges à zéro pour que le graphe prenne tout l'espace
+                    margin=dict(t=0, b=0, l=0, r=0),
+                    height=700, # Hauteur généreuse pour la lisibilité
+                    template="plotly_white",
                 ))
     
-    st.plotly_chart(fig, use_container_width=True)
+    # Active le zoom auto optimal au chargement
+    fig.update_layout(autotypenumbers='strict')
+    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
     
 # --- CHARGEMENT INITIAL POUR LES BORNES DE DATE ---
 data_full = charger_donnees(URL_CSV)
