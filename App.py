@@ -170,20 +170,27 @@ def charger_donnees(url):
         return sujets
     except: return []
 
-def formater_nom_theme(nom, largeur=20):
-    """Insère des retours à la ligne HTML pour Plotly."""
+def formater_nom_theme(nom, largeur=15):
+    """Insère des retours à la ligne pour la lisibilité."""
     if nom == "CHIMIE": return nom
-    # Découpe le texte proprement tous les ~20 caractères
     lignes = textwrap.wrap(nom, width=largeur)
     return "<br>".join(lignes)
 
-def afficher_mind_map_thematique(resultats):
-    if not resultats:
-        return
+def obtenir_couleur_gradient(base_hex, intensite):
+    """
+    Simule un gradient en modifiant l'opacité ou la saturation.
+    intensite: float entre 0.1 (clair) et 1.0 (foncé)
+    """
+    # Pour simplifier avec Plotly, on peut utiliser des échelles de couleurs intégrées
+    # ou passer par des RGBA. Ici, on va utiliser des échelles prédéfinies plus bas.
+    return intensite
 
-    # --- 1. PRÉPARATION DES DONNÉES D'AFFINITÉ (Inchangé) ---
-    adjacence = {}
+def afficher_mind_map_thematique(resultats):
+    if not resultats: return
+
+    # --- 1. COMPTAGE ET ADJACENCE ---
     counts = {}
+    adjacence = {}
     for s in resultats:
         themes = [t.strip() for t in s['questions']['Thème'].dropna().astype(str).tolist() 
                   if "autre" not in t.lower() and t.strip() != ""]
@@ -196,101 +203,107 @@ def afficher_mind_map_thematique(resultats):
                     pair = tuple(sorted((t, t_next)))
                     adjacence[pair] = adjacence.get(pair, 0) + 1
 
-    if not counts:
-        return
+    if not counts: return
 
-    # --- 2. CRÉATION DU GRAPHE NETWORKX ---
+    # --- 2. CONSTRUCTION DU GRAPHE ---
     G = nx.Graph()
-    G.add_node("CHIMIE", size=max(counts.values())*1.5, type='root')
-    
+    G.add_node("CHIMIE", category="CENTRE")
+
     for t, size in counts.items():
-        G.add_node(t, size=size, type='theme')
-        # Force de base vers le centre
+        cat = DICT_CATEGORIES.get(t, "AUTRE").upper()
+        G.add_node(t, size=size, category=cat)
         G.add_edge("CHIMIE", t, weight=0.1)
 
     for (u, v), weight in adjacence.items():
         if u in G and v in G:
-            G.add_edge(u, v, weight=weight)
+            G.add_edge(u, v, weight=weight * 0.2)
 
-    # --- 3. CALCUL DU POSITIONNEMENT (Spring Layout compact) ---
-    # k=1.0 pour rapprocher les nœuds et compacter le graphe
-    pos = nx.spring_layout(G, k=1.0/np.sqrt(len(G.nodes())), iterations=50, seed=42)
+    # --- 3. POSITIONNEMENT POLARISÉ (Compacité Max) ---
+    init_pos = {"CHIMIE": (0, 0)}
+    fixed_nodes = ["CHIMIE"]
+    for node, data in G.nodes(data=True):
+        if node == "CHIMIE": continue
+        # On resserre les coordonnées initiales pour éviter l'éparpillement
+        if data['category'] == "ORGA":
+            init_pos[node] = (np.random.uniform(-0.2, 0.2), 0.6)
+        elif data['category'] == "GENERALE":
+            init_pos[node] = (np.random.uniform(-0.2, 0.2), -0.6)
 
-    # --- 4. PRÉPARATION DES TRACÉS PLOTLY ---
+    # k réduit pour compacter les bulles dans un "carré" visuel
+    pos = nx.spring_layout(G, k=1.1/np.sqrt(len(G.nodes())), pos=init_pos, fixed=fixed_nodes, iterations=100)
+
+    # --- 4. CALCUL DES COULEURS (Gradients) ---
+    max_q = max(counts.values()) if counts else 1
     
-    # 4a. Les liens (Fils discrets)
-    edge_x, edge_y = [], []
-    for edge in G.edges():
-        x0, y0 = pos[edge[0]]
-        x1, y1 = pos[edge[1]]
-        edge_x.extend([x0, x1, None])
-        edge_y.extend([y0, y1, None])
-
-    edge_trace = go.Scatter(
-        x=edge_x, y=edge_y, 
-        line=dict(width=0.5, color='#dcdde1'), 
-        hoverinfo='none', mode='lines'
-    )
-
-    # 4b. Les bulles (Nodes) - Logique de couleur dégradée
-    node_x, node_y, node_text, node_color, node_size = [], [], [], [], []
+    node_x, node_y, node_text, node_color, node_colorscale = [], [], [], [], []
     
-    # Échelle de couleur personnalisée : Bleu clair -> Bleu foncé
-    # 'Algae' est un bon dégradé vert/bleu qui va du clair au foncé
-    colorscale_theme = 'Blues' 
+    # Séparation des traces pour avoir deux échelles de couleurs différentes
+    # Mais pour rester simple en un seul passage Plotly, on utilise des listes de couleurs fixes
     
-    # Pour normaliser les couleurs (0 à 1)
-    max_count = max(counts.values()) if counts else 1
+    def calculer_couleur(cat, count):
+        ratio = count / max_q
+        # On définit des paliers de luminosité (HSL ou Hex)
+        if cat == "ORGA":
+            # Dégradé de Bleu (Clair -> Foncé)
+            if ratio < 0.3: return "#d1d1ff"
+            if ratio < 0.7: return "#7a7aff"
+            return "#0000bb"
+        elif cat == "GENERALE":
+            # Dégradé d'Orange (Clair -> Foncé)
+            if ratio < 0.3: return "#ffe8cc"
+            if ratio < 0.7: return "#ffb366"
+            return "#e67e00"
+        elif cat == "CENTRE":
+            return "#fc6076"
+        return "#dfe6e9"
 
     for node in G.nodes():
         x, y = pos[node]
         node_x.append(x)
         node_y.append(y)
         
-        # Formatage du texte pour le survol
-        node_text.append(f"<b>{node}</b><br>{counts.get(node, '')} questions")
+        cat = G.nodes[node].get('category', "AUTRE")
+        q = counts.get(node, 0)
+        node_color.append(calculer_couleur(cat, q))
         
-        # Style des nœuds
-        if node == "CHIMIE":
-            node_size.append(35) # Taille fixe moyenne
-            node_color.append("#fc6076") # Rouge Logo fixe
+        # Nom avec retour à la ligne
+        if node == "CHIMIE" or q > 0:
+            node_text.append(formater_nom_theme(node))
         else:
-            node_size.append(25) # Toutes les bulles thématiques ont la même taille
-            # La couleur dépend du nombre de questions
-            count = counts.get(node, 0)
-            node_color.append(count / max_count) # Valeur normalisée entre 0 et 1
+            node_text.append("")
+
+    # --- 5. RENDU PLOTLY ---
+    edge_x, edge_y = [], []
+    for u, v in G.edges():
+        x0, y0 = pos[u]
+        x1, y1 = pos[v]
+        edge_x.extend([x0, x1, None])
+        edge_y.extend([y0, y1, None])
+
+    edge_trace = go.Scatter(x=edge_x, y=edge_y, line=dict(width=0.4, color='#f0f0f0'), hoverinfo='none', mode='lines')
 
     node_trace = go.Scatter(
         x=node_x, y=node_y, mode='markers+text',
-        # N'affiche le texte que pour les bulles importantes pour éviter le chaos
-        text=[n if counts.get(n, 0) > max_count/3 or n == "CHIMIE" else "" for n in G.nodes()],
-        textposition="bottom center",
-        hoverinfo='text', hovertext=node_text,
+        text=node_text, textposition="top center",
+        textfont=dict(size=10, family="Arial Narrow"),
+        hoverinfo='text', hovertext=[f"{n} ({counts.get(n, 0)} q.)" for n in G.nodes()],
         marker=dict(
-            showscale=False, # Cache la légende de l'échelle de couleur
-            colorscale=colorscale_theme,
-            color=node_color, # Liste des valeurs normalisées
-            size=node_size,
-            line=dict(width=2, color='white')
+            color=node_color, 
+            size=22, # Taille uniforme et petite
+            line=dict(width=1, color='white')
         )
     )
 
-    # --- 5. CONFIGURATION DE LA MISE EN PAGE POUR LE ZOOM AUTO MAXIMAL ---
     fig = go.Figure(data=[edge_trace, node_trace],
                  layout=go.Layout(
-                    showlegend=False,
-                    # Supprime les grilles, zéros et étiquettes d'axe
-                    xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                    yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                    # Marges à zéro pour que le graphe prenne tout l'espace
-                    margin=dict(t=0, b=0, l=0, r=0),
-                    height=700, # Hauteur généreuse pour la lisibilité
-                    template="plotly_white",
+                    showlegend=False, height=700,
+                    xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-1.1, 1.1]),
+                    yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-1.1, 1.1]),
+                    margin=dict(t=10, b=10, l=10, r=10),
+                    template="plotly_white"
                 ))
     
-    # Active le zoom auto optimal au chargement
-    fig.update_layout(autotypenumbers='strict')
-    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+    st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
     
 # --- CHARGEMENT INITIAL POUR LES BORNES DE DATE ---
 data_full = charger_donnees(URL_CSV)
