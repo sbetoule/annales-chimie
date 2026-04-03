@@ -185,13 +185,13 @@ def formater_nom_theme(nom, largeur=15):
     lignes = textwrap.wrap(nom, width=largeur, break_long_words=False)
     return "<br>".join(lignes)
 
-import time # Import nécessaire pour le délai de l'animation
+import time
 
 def afficher_mind_map_thematique(resultats):
     if not resultats:
         return
 
-    # --- 1. CALCULS (Identique à ton code) ---
+    # --- 1. CALCULS (Inchangé) ---
     counts = {}
     adjacence = {}
     for s in resultats:
@@ -209,16 +209,12 @@ def afficher_mind_map_thematique(resultats):
                         pair = tuple(sorted((t, t_next)))
                         adjacence[pair] = adjacence.get(pair, 0) + 1
 
-    if not counts: return
-
-    # --- 2. CONSTRUCTION DU GRAPHE COMPLET (Calcul des positions en une fois) ---
+    # --- 2. CONSTRUCTION DU GRAPHE COMPLET (Seed fixe) ---
     G = nx.Graph()
     G.add_node("CHIMIE", cat="ROOT", label="<b>CHIMIE</b>")
     G.add_node("CHIMIE ORGANIQUE", cat="ORGA_HUB", label="<b>CHIMIE<br>ORGANIQUE</b>")
     G.add_node("CHIMIE GÉNÉRALE", cat="GEN_HUB", label="<b>CHIMIE<br>GÉNÉRALE</b>")
-    G.add_edge("CHIMIE", "CHIMIE ORGANIQUE", weight=3)
-    G.add_edge("CHIMIE", "CHIMIE GÉNÉRALE", weight=3)
-
+    
     for t, count in counts.items():
         cat = DICT_CATEGORIES.get(t, "AUTRE").upper()
         G.add_node(t, cat=cat, count=count, label=formater_nom_theme(t))
@@ -229,38 +225,40 @@ def afficher_mind_map_thematique(resultats):
     for (u, v), w in adjacence.items():
         if u in G and v in G: G.add_edge(u, v, weight=w * 0.5)
 
-    # Calcul des positions finales pour que les bulles ne bougent pas pendant l'apparition
     pos = nx.spring_layout(G, k=1.3/np.sqrt(len(G.nodes())), iterations=150, seed=42)
 
-    # --- 3. ANIMATION DE CHARGEMENT PROGRESSIF ---
-    placeholder = st.empty() # Conteneur qui sera mis à jour
-    tous_les_noeuds = list(G.nodes())
-    # On définit l'ordre d'apparition : d'abord les HUBs, puis les thèmes
-    hubs = ["CHIMIE", "CHIMIE ORGANIQUE", "CHIMIE GÉNÉRALE"]
-    themes_restants = [n for n in tous_les_noeuds if n not in hubs]
+    # --- 3. ANIMATION FLUIDE (UN PAR UN) ---
+    placeholder = st.empty()
     
-    # On fait apparaître les thèmes par groupes (5 étapes)
-    steps = 5
-    chunks = np.array_split(themes_restants, steps)
-    noeuds_visibles = hubs.copy()
-
-    for i in range(steps + 1):
-        if i > 0:
-            noeuds_visibles.extend(chunks[i-1].tolist())
+    # Ordre d'apparition : Coeurs -> Thèmes du plus gros au plus petit
+    hubs = ["CHIMIE", "CHIMIE ORGANIQUE", "CHIMIE GÉNÉRALE"]
+    themes_tries = sorted([n for n in G.nodes() if n not in hubs], 
+                         key=lambda x: counts.get(x, 0), reverse=True)
+    
+    noeuds_visibles = []
+    
+    # Liste de toutes les étapes (Hubs d'abord, puis thèmes 1 par 1)
+    sequence = [hubs] + [[t] for t in themes_tries]
+    
+    for step in sequence:
+        noeuds_visibles.extend(step)
         
-        # Création de la figure pour cette étape
         fig = go.Figure()
         
-        # Filtrer les liens pour n'afficher que ceux entre nœuds visibles
+        # Dessin des lignes (uniquement entre noeuds visibles)
         edge_x, edge_y = [], []
         for u, v in G.edges():
             if u in noeuds_visibles and v in noeuds_visibles:
                 edge_x.extend([pos[u][0], pos[v][0], None])
                 edge_y.extend([pos[u][1], pos[v][1], None])
 
-        fig.add_trace(go.Scatter(x=edge_x, y=edge_y, line=dict(width=0.3, color='rgba(200, 200, 200, 0.4)'), mode='lines', hoverinfo='none'))
+        fig.add_trace(go.Scatter(
+            x=edge_x, y=edge_y, 
+            line=dict(width=0.4, color='rgba(200, 200, 200, 0.5)'), 
+            mode='lines', hoverinfo='none'
+        ))
 
-        # Filtrer les nœuds
+        # Dessin des Noeuds
         nx_v, ny_v, nt_v, nc_v, ns_v, nh_v = [], [], [], [], [], []
         max_q = max(counts.values()) if counts else 1
 
@@ -271,33 +269,37 @@ def afficher_mind_map_thematique(resultats):
             q = G.nodes[n].get('count', 0)
             
             if cat in ["ROOT", "ORGA_HUB", "GEN_HUB"]:
-                ns_v.append(45 if cat=="ROOT" else 32)
+                ns_v.append(45 if cat=="ROOT" else 35)
                 nc_v.append("#fc6076" if cat=="ROOT" else ("#7a7aff" if "ORGA" in cat else "#ffb366"))
                 nh_v.append(f"<b>{n}</b>")
             else:
-                ns_v.append(22)
                 ratio = q / max_q
-                if cat == "ORGA": nc_v.append("#0000bb" if ratio > 0.6 else "#7a7aff")
-                elif cat == "GENERALE": nc_v.append("#e67e00" if ratio > 0.6 else "#ffb366")
+                ns_v.append(22)
+                if cat == "ORGA": nc_v.append("#0000bb" if ratio > 0.6 else "#7a7aff" if ratio > 0.2 else "#d1d1ff")
+                elif cat == "GENERALE": nc_v.append("#e67e00" if ratio > 0.6 else "#ffb366" if ratio > 0.2 else "#ffe8cc")
                 else: nc_v.append("#dfe6e9")
                 nh_v.append(f"<b>{n}</b><br>{q} questions")
 
         fig.add_trace(go.Scatter(
-            x=nx_v, y=ny_v, mode='markers+text', text=nt_v, textposition="top center",
-            textfont=dict(size=11, family="Segoe UI, Arial", color="black"),
+            x=nx_v, y=ny_v, mode='markers+text', text=nt_v, 
+            textposition="top center",
+            textfont=dict(size=10, family="Segoe UI", color="black"),
             marker=dict(color=nc_v, size=ns_v, line=dict(width=1, color='white')),
             hoverinfo='text', hovertext=nh_v
         ))
 
         fig.update_layout(
-            showlegend=False, height=600, margin=dict(t=0, b=0, l=0, r=0),
+            showlegend=False, height=700, margin=dict(t=0, b=0, l=0, r=0),
             xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-1.2, 1.2]),
             yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-1.2, 1.2]),
             template="plotly_white", dragmode='pan'
         )
 
-        placeholder.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}, key=f"anim_{i}")
-        time.sleep(0.3) # Vitesse de l'apparition
+        # On utilise une clé unique basée sur la longueur pour forcer la mise à jour fluide
+        placeholder.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}, key=f"step_{len(noeuds_visibles)}")
+        
+        # Vitesse d'apparition (très court pour l'effet fluide)
+        time.sleep(0.08)
     
 # --- CHARGEMENT INITIAL POUR LES BORNES DE DATE ---
 data_full = charger_donnees(URL_CSV)
@@ -511,12 +513,16 @@ if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container
         
 # --- RÉSULTATS ET DÉTAILS ---
 if st.session_state.resultats_recherche:
-    with st.expander("🗺️ Mind Map des thématiques trouvées", expanded=False):
-        st.write("Les bulles sont regroupées par affinité pédagogique (thèmes souvent liés dans les sujets).")
-        afficher_mind_map_thematique(st.session_state.resultats_recherche)
+    # 1. On affiche le bandeau de succès
     nb = len(st.session_state.resultats_recherche)
-    label_sujet = "sujet trouvé" if nb == 1 else "sujets trouvés"
-    st.success(f"✅ {nb} {label_sujet}")
+    st.success(f"✅ {nb} sujet{'s' if nb > 1 else ''} trouvé{'s' if nb > 1 else ''}")
+
+    # 2. LA MIND MAP APPARAÎT ICI (Directement, sans expander)
+    st.subheader("🧪 Panorama des thématiques")
+    # On appelle la fonction : l'animation va se jouer sous les yeux de l'utilisateur
+    afficher_mind_map_thematique(st.session_state.resultats_recherche)
+    
+    st.divider() # Séparation visuelle avant les sujets
 
     for idx, r in enumerate(st.session_state.resultats_recherche):
         # On utilise une flèche ou un séparateur pour bien distinguer les deux parties
