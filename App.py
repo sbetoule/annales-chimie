@@ -180,43 +180,42 @@ def obtenir_couleur_gradient(base_hex, intensite):
     return intensite
 
 def formater_nom_theme(nom, largeur=15):
-    """Insère des retours à la ligne uniquement au niveau des espaces."""
+    """Insère des retours à la ligne uniquement sur les espaces."""
     if not nom or nom == "CHIMIE": return nom
-    # break_long_words=False garantit qu'on ne coupe pas un mot technique
+    # break_long_words=False empêche de couper au milieu d'un mot technique
     lignes = textwrap.wrap(nom, width=largeur, break_long_words=False)
     return "<br>".join(lignes)
 
 def afficher_mind_map_thematique(resultats):
-    if not resultats: return
+    if not resultats:
+        return
 
     counts = {}
     adjacence = {}
 
-    # --- 1. CALCUL DE L'ADJACENCE PAR PARTIE ---
+    # --- 1. CALCUL DE L'ADJACENCE ET DES COMPTAGES (Par Partie) ---
     for s in resultats:
-        # On récupère le DataFrame des questions pour cette session/partie
         df_q = s['questions']
+        # Séparation par partie pour éviter les liens hors contexte
+        groupes = df_q.groupby('Partie') if 'Partie' in df_q.columns else [("Unique", df_q)]
         
-        # On itère par groupe de 'Partie' (si la colonne existe)
-        # Si 'Partie' n'existe pas, on traite tout le bloc comme une partie unique
-        groupes_parties = df_q.groupby('Partie') if 'Partie' in df_q.columns else [("Unique", df_q)]
-        
-        for nom_partie, data_partie in groupes_parties:
+        for _, data_partie in groupes:
             themes = [t.strip() for t in data_partie['Thème'].dropna().astype(str).tolist() 
                       if "autre" not in t.lower() and t.strip() != ""]
             
             for i in range(len(themes)):
                 t = themes[i]
                 counts[t] = counts.get(t, 0) + 1
-                
-                # Lien N / N+1 uniquement au sein de la même partie
                 if i < len(themes) - 1:
                     t_next = themes[i+1]
                     if t != t_next:
                         pair = tuple(sorted((t, t_next)))
                         adjacence[pair] = adjacence.get(pair, 0) + 1
 
-    # --- 2. CONSTRUCTION DU GRAPHE HIÉRARCHIQUE ---
+    if not counts:
+        return
+
+    # --- 2. CONSTRUCTION DU GRAPHE ---
     G = nx.Graph()
     G.add_node("CHIMIE", cat="ROOT", label="<b>CHIMIE</b>")
     G.add_node("CHIMIE ORGANIQUE", cat="ORGA_HUB", label="<b>CHIMIE<br>ORGANIQUE</b>")
@@ -229,7 +228,7 @@ def afficher_mind_map_thematique(resultats):
         cat = DICT_CATEGORIES.get(t, "AUTRE").upper()
         G.add_node(t, cat=cat, count=count, label=formater_nom_theme(t))
         
-        # Liens vers les Hubs (on ne voit pas ces liens dans le rendu final si on veut)
+        # Rattachement aux Hubs (pas de lien direct thèmes -> centre)
         if cat == "ORGA":
             G.add_edge("CHIMIE ORGANIQUE", t, weight=1.0)
         elif cat == "GENERALE":
@@ -237,27 +236,75 @@ def afficher_mind_map_thematique(resultats):
         else:
             G.add_edge("CHIMIE", t, weight=1.0)
 
-    # Ajout des corrélations (N+1 / N-1)
     for (u, v), w in adjacence.items():
         if u in G and v in G:
-            # On ajoute un lien physique entre les thèmes liés
             G.add_edge(u, v, weight=w * 0.2)
 
-    # --- 3. POSITIONNEMENT ET RENDU ---
-    # Utilisation du mode 'pan' (plan) par défaut
-    pos = nx.spring_layout(G, k=1.4/np.sqrt(len(G.nodes())), iterations=100)
+    # --- 3. POSITIONNEMENT ---
+    init_pos = {"CHIMIE": (0, 0), "CHIMIE ORGANIQUE": (0, 0.4), "CHIMIE GÉNÉRALE": (0, -0.4)}
+    pos = nx.spring_layout(G, k=1.3/np.sqrt(len(G.nodes())), pos=init_pos, iterations=100)
 
-    # ... (Le reste du code de node_trace et edge_trace reste identique au précédent) ...
+    # --- 4. PRÉPARATION DU RENDU (Couleurs & Tailles) ---
+    max_q = max(counts.values()) if counts else 1
+    node_x, node_y, node_text, node_color, node_size = [], [], [], [], []
+    
+    for n in G.nodes():
+        node_x.append(pos[n][0])
+        node_y.append(pos[n][1])
+        node_text.append(G.nodes[n].get('label', ''))
+        
+        cat = G.nodes[n].get('cat')
+        q = G.nodes[n].get('count', 0)
+        ratio = q / max_q
+        
+        if cat == "ROOT":
+            node_color.append("#fc6076"); node_size.append(45)
+        elif "HUB" in cat:
+            node_color.append("#7a7aff" if "ORGA" in cat else "#ffb366")
+            node_size.append(32)
+        elif cat == "ORGA":
+            node_color.append("#0000bb" if ratio > 0.6 else "#7a7aff" if ratio > 0.2 else "#d1d1ff")
+            node_size.append(20)
+        elif cat == "GENERALE":
+            node_color.append("#e67e00" if ratio > 0.6 else "#ffb366" if ratio > 0.2 else "#ffe8cc")
+            node_size.append(20)
+        else:
+            node_color.append("#dfe6e9"); node_size.append(18)
 
+    # --- 5. CRÉATION DE LA FIGURE (L'objet 'fig' est défini ici) ---
+    edge_x, edge_y = [], []
+    for u, v in G.edges():
+        edge_x.extend([pos[u][0], pos[v][0], None])
+        edge_y.extend([pos[u][1], pos[v][1], None])
+
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(
+        x=edge_x, y=edge_y, 
+        line=dict(width=0.4, color='#f0f0f0'), 
+        hoverinfo='none', mode='lines'
+    ))
+
+    fig.add_trace(go.Scatter(
+        x=node_x, y=node_y, mode='markers+text',
+        text=node_text, textposition="top center",
+        textfont=dict(size=10, family="Arial Narrow"),
+        marker=dict(color=node_color, size=node_size, line=dict(width=1, color='white')),
+        hoverinfo='text', hovertext=[f"{n} ({counts.get(n,0)} q.)" for n in G.nodes()]
+    ))
+
+    # --- 6. MISE EN PAGE ET NAVIGATION ---
     fig.update_layout(
-        dragmode='pan', # Initialisation en mode Plan
-        xaxis=dict(range=[-1.2, 1.2], showgrid=False, zeroline=False, showticklabels=False),
-        yaxis=dict(range=[-1.2, 1.2], showgrid=False, zeroline=False, showticklabels=False),
-        margin=dict(t=0, b=0, l=0, r=0),
-        template="plotly_white"
+        showlegend=False, 
+        height=750,
+        margin=dict(t=10, b=10, l=10, r=10),
+        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-1.1, 1.1]),
+        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-1.1, 1.1]),
+        template="plotly_white",
+        dragmode='pan' # Définit le mode "Main/Plan" par défaut
     )
     
-    st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
+    st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True, 'displayModeBar': False})
     
 # --- CHARGEMENT INITIAL POUR LES BORNES DE DATE ---
 data_full = charger_donnees(URL_CSV)
