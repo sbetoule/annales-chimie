@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import networkx as nx
 import numpy as np
+import textwrap
 
 # Configuration de la page
 st.set_page_config(
@@ -169,6 +170,13 @@ def charger_donnees(url):
         return sujets
     except: return []
 
+def formater_nom_theme(nom, largeur=20):
+    """Insère des retours à la ligne HTML pour Plotly."""
+    if nom == "CHIMIE": return nom
+    # Découpe le texte proprement tous les ~20 caractères
+    lignes = textwrap.wrap(nom, width=largeur)
+    return "<br>".join(lignes)
+
 def afficher_mind_map_thematique(resultats):
     if not resultats: return
 
@@ -189,7 +197,7 @@ def afficher_mind_map_thematique(resultats):
 
     # --- 2. CONSTRUCTION DU GRAPHE ---
     G = nx.Graph()
-    G.add_node("CHIMIE", size=55, category="CENTRE")
+    G.add_node("CHIMIE", size=45, category="CENTRE") # Taille fixe réduite pour le centre
 
     for t, size in counts.items():
         cat = DICT_CATEGORIES.get(t, "AUTRE").upper()
@@ -200,40 +208,22 @@ def afficher_mind_map_thematique(resultats):
         if u in G and v in G:
             G.add_edge(u, v, weight=weight * 0.3)
 
-    # --- 3. POSITIONNEMENT AVEC POLARITÉ ---
-    # On définit des positions de départ pour forcer la séparation
+    # --- 3. POSITIONNEMENT (Évite la fuite des bulles) ---
     init_pos = {"CHIMIE": (0, 0)}
     fixed_nodes = ["CHIMIE"]
     
     for node, data in G.nodes(data=True):
         if node == "CHIMIE": continue
         if data['category'] == "ORGA":
-            init_pos[node] = (np.random.uniform(-0.5, 0.5), 1.0) # Attirance vers le haut
+            init_pos[node] = (np.random.uniform(-0.3, 0.3), 0.8)
         elif data['category'] == "GENERALE":
-            init_pos[node] = (np.random.uniform(-0.5, 0.5), -1.0) # Attirance vers le bas
-        else:
-            init_pos[node] = (np.random.uniform(-1, 1), np.random.uniform(-0.2, 0.2))
+            init_pos[node] = (np.random.uniform(-0.3, 0.3), -0.8)
 
-    # spring_layout avec positions initiales
-    pos = nx.spring_layout(G, k=1.8/np.sqrt(len(G.nodes())), pos=init_pos, fixed=fixed_nodes, iterations=60)
+    # k=1.0 réduit la distance entre les bulles par rapport à k=1.8 ou 2.0
+    pos = nx.spring_layout(G, k=1.2/np.sqrt(len(G.nodes())), pos=init_pos, fixed=fixed_nodes, iterations=80)
 
-    # --- 4. COULEURS ET RENDU ---
-    # Palette de couleurs stylisée
-    colors = {
-        "ORGA": "#a29bfe",      # Bleu/Violet doux
-        "GENERALE": "#ffcb8e",  # Ambre/Orange doux
-        "CENTRE": "#fc6076",    # Rouge Logo
-        "AUTRE": "#dfe6e9"      # Gris clair
-    }
-
-    edge_x, edge_y = [], []
-    for u, v in G.edges():
-        x0, y0 = pos[u]
-        x1, y1 = pos[v]
-        edge_x.extend([x0, x1, None])
-        edge_y.extend([y0, y1, None])
-
-    edge_trace = go.Scatter(x=edge_x, y=edge_y, line=dict(width=0.5, color='#ecf0f1'), hoverinfo='none', mode='lines')
+    # --- 4. PRÉPARATION DU RENDU ---
+    colors = {"ORGA": "#a29bfe", "GENERALE": "#ffcb8e", "CENTRE": "#fc6076", "AUTRE": "#dfe6e9"}
 
     node_x, node_y, node_text, node_size, node_color = [], [], [], [], []
     for node in G.nodes():
@@ -244,29 +234,47 @@ def afficher_mind_map_thematique(resultats):
         cat = G.nodes[node]['category']
         node_color.append(colors.get(cat, colors["AUTRE"]))
         
-        # Taille log pour l'équilibre
-        s = counts.get(node, 10)
-        node_size.append(50 if node=="CHIMIE" else 15 + np.log1p(s)*10)
+        # --- RÉDUCTION TAILLE BULLES ---
+        # Utilisation de log2 pour une compression plus forte que log1p
+        s = counts.get(node, 1)
+        if node == "CHIMIE":
+            node_size.append(40)
+        else:
+            # Taille minimum 10, croissance très lente
+            node_size.append(10 + np.log2(s + 1) * 8)
         
-        # Affichage du texte si important
+        # --- RETOUR À LA LIGNE ---
         if node == "CHIMIE" or counts.get(node, 0) > 1:
-            node_text.append(f"<b>{node}</b>")
+            node_text.append(formater_nom_theme(node))
         else:
             node_text.append("")
+
+    # Tracé des liens
+    edge_x, edge_y = [], []
+    for u, v in G.edges():
+        x0, y0 = pos[u]
+        x1, y1 = pos[v]
+        edge_x.extend([x0, x1, None])
+        edge_y.extend([y0, y1, None])
+    
+    edge_trace = go.Scatter(x=edge_x, y=edge_y, line=dict(width=0.4, color='#ecf0f1'), hoverinfo='none', mode='lines')
 
     node_trace = go.Scatter(
         x=node_x, y=node_y, mode='markers+text',
         text=node_text, textposition="top center",
+        textfont=dict(size=10, family="Arial Narrow"), # Police condensée pour gagner de la place
         hoverinfo='text', hovertext=[f"{n} ({counts.get(n, 0)} q.)" for n in G.nodes()],
-        marker=dict(color=node_color, size=node_size, line=dict(width=1.5, color='white'))
+        marker=dict(color=node_color, size=node_size, line=dict(width=1, color='white'))
     )
 
     fig = go.Figure(data=[edge_trace, node_trace],
                  layout=go.Layout(
-                    showlegend=False, height=700, template="plotly_white",
+                    showlegend=False, height=650, template="plotly_white",
                     xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
                     yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                    margin=dict(t=30, b=30, l=10, r=10)
+                    margin=dict(t=20, b=20, l=10, r=10),
+                    # Empêche le zoom auto d'aller trop loin
+                    xaxis_range=[-1.2, 1.2], yaxis_range=[-1.2, 1.2] 
                 ))
     
     st.plotly_chart(fig, use_container_width=True)
