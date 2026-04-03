@@ -517,8 +517,8 @@ if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container
         
 # --- RÉSULTATS ET DÉTAILS ---
 if st.session_state.resultats_recherche:
-    with st.expander("💡 Mind Map des thématiques des sujets trouvées", expanded=False):
-        st.write("Explorez l'architecture des sujets trouvés : l'obscurité des nœuds indique leur importance, tandis que leur position révèle les liens thématiques entre deux questions qui se suivent.")
+    with st.expander("💡 Architecture des sujets trouvés", expanded=False):
+        st.write("L'obscurité des disques indique l'occurence des thèmes, leur position révèle les liens thématiques entre deux questions qui se suivent au sein d'une même partie.")
         afficher_mind_map_thematique(st.session_state.resultats_recherche)
     nb = len(st.session_state.resultats_recherche)
     label_sujet = "sujet trouvé" if nb == 1 else "sujets trouvés"
