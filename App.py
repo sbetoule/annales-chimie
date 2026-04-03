@@ -191,7 +191,7 @@ def afficher_mind_map_thematique(resultats):
     if not resultats:
         return
 
-    # --- 1. CALCULS (Inchangé) ---
+    # --- 1. CALCULS (Identique) ---
     counts = {}
     adjacence = {}
     for s in resultats:
@@ -209,7 +209,7 @@ def afficher_mind_map_thematique(resultats):
                         pair = tuple(sorted((t, t_next)))
                         adjacence[pair] = adjacence.get(pair, 0) + 1
 
-    # --- 2. CONSTRUCTION DU GRAPHE COMPLET (Seed fixe) ---
+    # --- 2. CONSTRUCTION DU GRAPHE COMPLET ---
     G = nx.Graph()
     G.add_node("CHIMIE", cat="ROOT", label="<b>CHIMIE</b>")
     G.add_node("CHIMIE ORGANIQUE", cat="ORGA_HUB", label="<b>CHIMIE<br>ORGANIQUE</b>")
@@ -227,25 +227,26 @@ def afficher_mind_map_thematique(resultats):
 
     pos = nx.spring_layout(G, k=1.3/np.sqrt(len(G.nodes())), iterations=150, seed=42)
 
-    # --- 3. ANIMATION FLUIDE (UN PAR UN) ---
+    # --- 3. ANIMATION OPTIMISÉE ---
     placeholder = st.empty()
     
-    # Ordre d'apparition : Coeurs -> Thèmes du plus gros au plus petit
     hubs = ["CHIMIE", "CHIMIE ORGANIQUE", "CHIMIE GÉNÉRALE"]
     themes_tries = sorted([n for n in G.nodes() if n not in hubs], 
                          key=lambda x: counts.get(x, 0), reverse=True)
     
+    # On groupe les thèmes par 2 pour réduire le nombre de "re-renders" (limite le clignotement)
+    n = 2 
+    chunks = [themes_tries[i:i + n] for i in range(0, len(themes_tries), n)]
+    sequence = [hubs] + chunks
+    
     noeuds_visibles = []
     
-    # Liste de toutes les étapes (Hubs d'abord, puis thèmes 1 par 1)
-    sequence = [hubs] + [[t] for t in themes_tries]
-    
-    for step in sequence:
-        noeuds_visibles.extend(step)
+    for step_nodes in sequence:
+        noeuds_visibles.extend(step_nodes)
         
         fig = go.Figure()
         
-        # Dessin des lignes (uniquement entre noeuds visibles)
+        # 1. Liens (Tracés en premier pour être en dessous)
         edge_x, edge_y = [], []
         for u, v in G.edges():
             if u in noeuds_visibles and v in noeuds_visibles:
@@ -254,52 +255,59 @@ def afficher_mind_map_thematique(resultats):
 
         fig.add_trace(go.Scatter(
             x=edge_x, y=edge_y, 
-            line=dict(width=0.4, color='rgba(200, 200, 200, 0.5)'), 
+            line=dict(width=0.5, color='rgba(220, 220, 220, 0.4)'), 
             mode='lines', hoverinfo='none'
         ))
 
-        # Dessin des Noeuds
+        # 2. Noeuds
         nx_v, ny_v, nt_v, nc_v, ns_v, nh_v = [], [], [], [], [], []
         max_q = max(counts.values()) if counts else 1
 
-        for n in noeuds_visibles:
-            nx_v.append(pos[n][0]); ny_v.append(pos[n][1])
-            nt_v.append(G.nodes[n].get('label', ''))
-            cat = G.nodes[n].get('cat')
-            q = G.nodes[n].get('count', 0)
+        for n_id in noeuds_visibles:
+            nx_v.append(pos[n_id][0]); ny_v.append(pos[n_id][1])
+            nt_v.append(G.nodes[n_id].get('label', ''))
+            cat = G.nodes[n_id].get('cat')
+            q = G.nodes[n_id].get('count', 0)
             
             if cat in ["ROOT", "ORGA_HUB", "GEN_HUB"]:
                 ns_v.append(45 if cat=="ROOT" else 35)
                 nc_v.append("#fc6076" if cat=="ROOT" else ("#7a7aff" if "ORGA" in cat else "#ffb366"))
-                nh_v.append(f"<b>{n}</b>")
+                nh_v.append(f"<b>{n_id}</b>")
             else:
                 ratio = q / max_q
                 ns_v.append(22)
                 if cat == "ORGA": nc_v.append("#0000bb" if ratio > 0.6 else "#7a7aff" if ratio > 0.2 else "#d1d1ff")
                 elif cat == "GENERALE": nc_v.append("#e67e00" if ratio > 0.6 else "#ffb366" if ratio > 0.2 else "#ffe8cc")
                 else: nc_v.append("#dfe6e9")
-                nh_v.append(f"<b>{n}</b><br>{q} questions")
+                nh_v.append(f"<b>{n_id}</b><br>{q} questions")
 
         fig.add_trace(go.Scatter(
             x=nx_v, y=ny_v, mode='markers+text', text=nt_v, 
             textposition="top center",
-            textfont=dict(size=10, family="Segoe UI", color="black"),
+            textfont=dict(size=10, family="Arial", color="black"),
             marker=dict(color=nc_v, size=ns_v, line=dict(width=1, color='white')),
             hoverinfo='text', hovertext=nh_v
         ))
 
+        # --- CONFIGURATION CRITIQUE POUR LE "SMOOTH" ---
         fig.update_layout(
             showlegend=False, height=700, margin=dict(t=0, b=0, l=0, r=0),
-            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-1.2, 1.2]),
-            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-1.2, 1.2]),
-            template="plotly_white", dragmode='pan'
+            # Fixer les ranges empêche Plotly de recalculer le zoom à chaque noeud (cause du clignotement)
+            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-1.3, 1.3], fixedrange=True),
+            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-1.3, 1.3], fixedrange=True),
+            template="plotly_white",
+            dragmode=False, # Désactiver pendant l'anim pour éviter les conflits de rendu
+            hovermode='closest'
         )
 
-        # On utilise une clé unique basée sur la longueur pour forcer la mise à jour fluide
-        placeholder.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}, key=f"step_{len(noeuds_visibles)}")
+        # Affichage sans barre de menu pour plus de légèreté
+        placeholder.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False, 'staticPlot': False}, key=f"anim_{len(noeuds_visibles)}")
         
-        # Vitesse d'apparition (très court pour l'effet fluide)
-        time.sleep(0.08)
+        time.sleep(0.05) # Délai très court pour simuler la fluidité
+
+    # Une fois fini, on remet le dragmode pour que l'utilisateur puisse bouger le graphe
+    fig.update_layout(dragmode='pan')
+    placeholder.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True, 'displayModeBar': False}, key="final_map")
     
 # --- CHARGEMENT INITIAL POUR LES BORNES DE DATE ---
 data_full = charger_donnees(URL_CSV)
