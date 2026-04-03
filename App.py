@@ -154,101 +154,105 @@ def charger_donnees(url):
     except: return []
 
 def afficher_mind_map_thematique(resultats):
-    if not resultats:
-        return
+    if not resultats: return
 
-    # 1. Préparation des données d'affinité
-    adjacence = {} # Pour compter les liens
-    counts = {}    # Pour la taille des bulles
+    adjacence = {}
+    counts = {}
     
+    # 1. Collecte des données (inchangé mais filtré)
     for s in resultats:
         themes = [t.strip() for t in s['questions']['Thème'].dropna().astype(str).tolist() 
                   if "autre" not in t.lower() and t.strip() != ""]
-        
         for i in range(len(themes)):
             t = themes[i]
             counts[t] = counts.get(t, 0) + 1
-            
-            # On regarde le lien avec le thème suivant (N+1)
             if i < len(themes) - 1:
                 t_next = themes[i+1]
                 if t != t_next:
                     pair = tuple(sorted((t, t_next)))
                     adjacence[pair] = adjacence.get(pair, 0) + 1
 
-    if not counts:
-        return
+    if not counts: return
 
-    # 2. Création du graphe NetworkX
+    # 2. Construction du Graphe
     G = nx.Graph()
-    G.add_node("CHIMIE", size=max(counts.values())*1.5, type='root')
+    G.add_node("CHIMIE", size=max(counts.values())*2, group=0)
     
     for t, size in counts.items():
-        G.add_node(t, size=size, type='theme')
-        # On relie chaque thème au centre (force de base)
-        G.add_edge("CHIMIE", t, weight=0.1)
+        G.add_node(t, size=size, group=1)
+        # Lien invisible vers le centre pour structurer
+        G.add_edge("CHIMIE", t, weight=0.05) 
 
     for (u, v), weight in adjacence.items():
         if u in G and v in G:
-            # Plus le poids est fort, plus le lien est court/serré
-            G.add_edge(u, v, weight=weight)
+            G.add_edge(u, v, weight=weight * 0.5)
 
-    # 3. Calcul du positionnement (Spring Layout)
-    # k règle l'écartement, iterations la stabilité
-    pos = nx.spring_layout(G, k=1.5/np.sqrt(len(G.nodes())), iterations=50)
+    # 3. PHYSIQUE AMÉLIORÉE
+    # k augmenté pour écarter les bulles
+    pos = nx.spring_layout(G, k=2.5/np.sqrt(len(G.nodes())), iterations=100, seed=42)
 
-    # 4. Préparation des tracés Plotly
+    # 4. TRACÉ DES LIENS (Fils discrets)
     edge_x, edge_y = [], []
-    for edge in G.edges():
-        x0, y0 = pos[edge[0]]
-        x1, y1 = pos[edge[1]]
+    for u, v, d in G.edges(data=True):
+        x0, y0 = pos[u]
+        x1, y1 = pos[v]
         edge_x.extend([x0, x1, None])
         edge_y.extend([y0, y1, None])
 
-    edge_trace = go.Scatter(x=edge_x, y=edge_y, line=dict(width=0.5, color='#bdc3c7'), hoverinfo='none', mode='lines')
+    edge_trace = go.Scatter(x=edge_x, y=edge_y, line=dict(width=0.7, color='#e0e0e0'), hoverinfo='none', mode='lines')
 
+    # 5. TRACÉ DES BULLES (Nodes)
     node_x, node_y, node_text, node_size, node_color = [], [], [], [], []
-    for node in G.nodes():
+    
+    # On trie pour mettre CHIMIE en dernier (au-dessus)
+    sorted_nodes = sorted(G.nodes(), key=lambda n: n == "CHIMIE")
+
+    for node in sorted_nodes:
         x, y = pos[node]
         node_x.append(x)
         node_y.append(y)
-        node_text.append(f"<b>{node}</b><br>{counts.get(node, '')} questions")
         
-        # Logique de style
-        if node == "CHIMIE":
-            node_size.append(50)
-            node_color.append("#fc6076") # Couleur du logo
+        # Taille logarithmique pour éviter les bulles géantes qui cachent tout
+        raw_size = counts.get(node, 10)
+        display_size = 15 + np.log1p(raw_size) * 10 if node != "CHIMIE" else 55
+        node_size.append(display_size)
+        
+        # Texte sélectif : Uniquement thèmes > 1 occurrence ou CHIMIE
+        if node == "CHIMIE" or counts.get(node, 0) > 1:
+            node_text.append(node)
         else:
-            # Taille proportionnelle (min 15, max 45)
-            s = counts.get(node, 1)
-            node_size.append(max(15, min(45, s * 2))) 
-            node_color.append("#3498db")
+            node_text.append("")
+            
+        # Couleur dégradée selon l'importance
+        node_color.append("#fc6076" if node == "CHIMIE" else "#3498db")
 
     node_trace = go.Scatter(
         x=node_x, y=node_y, mode='markers+text',
-        text=[n if counts.get(n, 0) > 2 or n == "CHIMIE" else "" for n in G.nodes()], # Affiche texte si important
-        textposition="bottom center",
-        hoverinfo='text', hovertext=node_text,
+        text=node_text,
+        textposition="top center",
+        textfont=dict(size=11, family="Poppins"),
+        hoverinfo='text',
+        hovertext=[f"<b>{n}</b><br>{counts.get(n, 0)} questions" for n in sorted_nodes],
         marker=dict(
-            showscale=False, color=node_color, size=node_size,
-            line=dict(width=2, color='white')
+            color=node_color, size=node_size,
+            line=dict(width=2, color='white'),
+            opacity=0.9
         )
     )
 
-    # 5. Rendu
-    fig = go.Figure(data=[edge_trace, node_trace],
-                 layout=go.Layout(
-                    showlegend=False,
-                    xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                    yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                    margin=dict(t=0, b=0, l=0, r=0),
-                    height=600,
-                    template="plotly_white",
-                    annotations=[dict(text="Faites glisser les bulles pour explorer", showarrow=False, 
-                                      xref="paper", yref="paper", x=0.01, y=0.01, font=dict(size=10, color="gray"))]
-                ))
+    # 6. MISE EN PAGE PROPRE
+    fig = go.Figure(data=[edge_trace, node_trace])
+    fig.update_layout(
+        showlegend=False,
+        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        height=700, # Plus de hauteur pour étaler
+        margin=dict(t=20, b=20, l=20, r=20),
+        template="plotly_white",
+        dragmode='pan' # Permet de se déplacer dans la map
+    )
     
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
     
 # --- CHARGEMENT INITIAL POUR LES BORNES DE DATE ---
 data_full = charger_donnees(URL_CSV)
