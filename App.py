@@ -281,15 +281,23 @@ def afficher_mind_map_thematique(resultats):
 
     fig.add_trace(go.Scatter(
         x=edge_x, y=edge_y, 
-        line=dict(width=0.4, color='#f0f0f0'), 
+        line=dict(width=0.2, color='#f0f0f0'), 
         hoverinfo='none', mode='lines'
     ))
 
     fig.add_trace(go.Scatter(
         x=node_x, y=node_y, mode='markers+text',
         text=node_text, textposition="top center",
-        textfont=dict(size=10, family="Arial Narrow"),
-        marker=dict(color=node_color, size=node_size, line=dict(width=1, color='white')),
+        textfont=dict(
+        size=11, 
+        family="Arial Black, Arial, sans-serif", # Utilisation d'une police plus grasse
+        color="black" # Noir profond
+    ),
+    marker=dict(
+        color=node_color, 
+        size=node_size, 
+        line=dict(width=1, color='white')
+    ),
         hoverinfo='text', hovertext=[f"{n} ({counts.get(n,0)} q.)" for n in G.nodes()]
     ))
 
