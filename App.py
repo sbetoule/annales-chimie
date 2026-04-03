@@ -188,122 +188,113 @@ def obtenir_couleur_gradient(base_hex, intensite):
 def afficher_mind_map_thematique(resultats):
     if not resultats: return
 
-    # --- 1. COMPTAGE ET ADJACENCE ---
+    # --- 1. COMPTAGE ET ADJACENCE (Identique) ---
     counts = {}
     adjacence = {}
     for s in resultats:
         themes = [t.strip() for t in s['questions']['Thème'].dropna().astype(str).tolist() 
                   if "autre" not in t.lower() and t.strip() != ""]
         for i in range(len(themes)):
-            t = themes[i]
-            counts[t] = counts.get(t, 0) + 1
+            t = themes[i]; counts[t] = counts.get(t, 0) + 1
             if i < len(themes) - 1:
                 t_next = themes[i+1]
                 if t != t_next:
                     pair = tuple(sorted((t, t_next)))
                     adjacence[pair] = adjacence.get(pair, 0) + 1
 
-    if not counts: return
-
-    # --- 2. CONSTRUCTION DU GRAPHE ---
+    # --- 2. CONSTRUCTION DU GRAPHE HIÉRARCHIQUE ---
     G = nx.Graph()
-    G.add_node("CHIMIE", category="CENTRE")
+    
+    # Niveaux principaux
+    G.add_node("CHIMIE", cat="ROOT", size=50, label="<b>CHIMIE</b>")
+    G.add_node("CHIMIE ORGANIQUE", cat="ORGA_HUB", size=35, label="<b>CHIMIE<br>ORGANIQUE</b>")
+    G.add_node("CHIMIE GÉNÉRALE", cat="GEN_HUB", size=35, label="<b>CHIMIE<br>GÉNÉRALE</b>")
+    
+    # Liens structurels
+    G.add_edge("CHIMIE", "CHIMIE ORGANIQUE", weight=2)
+    G.add_edge("CHIMIE", "CHIMIE GÉNÉRALE", weight=2)
 
-    for t, size in counts.items():
+    for t, count in counts.items():
         cat = DICT_CATEGORIES.get(t, "AUTRE").upper()
-        G.add_node(t, size=size, category=cat)
-        G.add_edge("CHIMIE", t, weight=0.1)
-
-    for (u, v), weight in adjacence.items():
-        if u in G and v in G:
-            G.add_edge(u, v, weight=weight * 0.2)
-
-    # --- 3. POSITIONNEMENT POLARISÉ (Compacité Max) ---
-    init_pos = {"CHIMIE": (0, 0)}
-    fixed_nodes = ["CHIMIE"]
-    for node, data in G.nodes(data=True):
-        if node == "CHIMIE": continue
-        # On resserre les coordonnées initiales pour éviter l'éparpillement
-        if data['category'] == "ORGA":
-            init_pos[node] = (np.random.uniform(-0.2, 0.2), 0.6)
-        elif data['category'] == "GENERALE":
-            init_pos[node] = (np.random.uniform(-0.2, 0.2), -0.6)
-
-    # k réduit pour compacter les bulles dans un "carré" visuel
-    pos = nx.spring_layout(G, k=1.1/np.sqrt(len(G.nodes())), pos=init_pos, fixed=fixed_nodes, iterations=100)
-
-    # --- 4. CALCUL DES COULEURS (Gradients) ---
-    max_q = max(counts.values()) if counts else 1
-    
-    node_x, node_y, node_text, node_color, node_colorscale = [], [], [], [], []
-    
-    # Séparation des traces pour avoir deux échelles de couleurs différentes
-    # Mais pour rester simple en un seul passage Plotly, on utilise des listes de couleurs fixes
-    
-    def calculer_couleur(cat, count):
-        ratio = count / max_q
-        # On définit des paliers de luminosité (HSL ou Hex)
+        G.add_node(t, cat=cat, count=count, label=formater_nom_theme(t))
+        
+        # RATTACHEMENT HIÉRARCHIQUE (Cache le lien direct vers CHIMIE)
         if cat == "ORGA":
-            # Dégradé de Bleu (Clair -> Foncé)
-            if ratio < 0.3: return "#d1d1ff"
-            if ratio < 0.7: return "#7a7aff"
-            return "#0000bb"
+            G.add_edge("CHIMIE ORGANIQUE", t, weight=0.5)
         elif cat == "GENERALE":
-            # Dégradé d'Orange (Clair -> Foncé)
-            if ratio < 0.3: return "#ffe8cc"
-            if ratio < 0.7: return "#ffb366"
-            return "#e67e00"
-        elif cat == "CENTRE":
-            return "#fc6076"
-        return "#dfe6e9"
-
-    for node in G.nodes():
-        x, y = pos[node]
-        node_x.append(x)
-        node_y.append(y)
-        
-        cat = G.nodes[node].get('category', "AUTRE")
-        q = counts.get(node, 0)
-        node_color.append(calculer_couleur(cat, q))
-        
-        # Nom avec retour à la ligne
-        if node == "CHIMIE" or q > 0:
-            node_text.append(formater_nom_theme(node))
+            G.add_edge("CHIMIE GÉNÉRALE", t, weight=0.5)
         else:
-            node_text.append("")
+            G.add_edge("CHIMIE", t, weight=0.5)
+
+    # Ajout des corrélations entre thèmes (plus fines pour ne pas casser la structure)
+    for (u, v), w in adjacence.items():
+        if u in G and v in G:
+            G.add_edge(u, v, weight=w * 0.1)
+
+    # --- 3. POSITIONNEMENT ---
+    init_pos = {"CHIMIE": (0, 0), "CHIMIE ORGANIQUE": (0, 0.5), "CHIMIE GÉNÉRALE": (0, -0.5)}
+    pos = nx.spring_layout(G, k=1.5/np.sqrt(len(G.nodes())), pos=init_pos, iterations=100)
+
+    # --- 4. COULEURS ET DÉGRADÉS ---
+    max_q = max(counts.values()) if counts else 1
+    node_colors = []
+    node_sizes = []
+    
+    for n in G.nodes():
+        data = G.nodes[n]
+        cat = data.get('cat')
+        q = data.get('count', 0)
+        ratio = q / max_q
+        
+        if cat == "ROOT":
+            node_colors.append("#fc6076"); node_sizes.append(50)
+        elif cat == "ORGA_HUB":
+            node_colors.append("#7a7aff"); node_sizes.append(35)
+        elif cat == "GEN_HUB":
+            node_colors.append("#ffb366"); node_sizes.append(35)
+        elif cat == "ORGA":
+            # Dégradé bleu
+            node_colors.append("#0000bb" if ratio > 0.6 else "#7a7aff" if ratio > 0.2 else "#d1d1ff")
+            node_sizes.append(22)
+        elif cat == "GENERALE":
+            # Dégradé orange
+            node_colors.append("#e67e00" if ratio > 0.6 else "#ffb366" if ratio > 0.2 else "#ffe8cc")
+            node_sizes.append(22)
+        else:
+            node_colors.append("#dfe6e9"); node_sizes.append(20)
 
     # --- 5. RENDU PLOTLY ---
     edge_x, edge_y = [], []
     for u, v in G.edges():
-        x0, y0 = pos[u]
-        x1, y1 = pos[v]
-        edge_x.extend([x0, x1, None])
-        edge_y.extend([y0, y1, None])
+        edge_x.extend([pos[u][0], pos[v][0], None])
+        edge_y.extend([pos[u][1], pos[v][1], None])
 
-    edge_trace = go.Scatter(x=edge_x, y=edge_y, line=dict(width=0.4, color='#f0f0f0'), hoverinfo='none', mode='lines')
-
-    node_trace = go.Scatter(
-        x=node_x, y=node_y, mode='markers+text',
-        text=node_text, textposition="top center",
-        textfont=dict(size=10, family="Arial Narrow"),
-        hoverinfo='text', hovertext=[f"{n} ({counts.get(n, 0)} q.)" for n in G.nodes()],
-        marker=dict(
-            color=node_color, 
-            size=22, # Taille uniforme et petite
-            line=dict(width=1, color='white')
-        )
-    )
-
-    fig = go.Figure(data=[edge_trace, node_trace],
-                 layout=go.Layout(
-                    showlegend=False, height=700,
-                    xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-1.1, 1.1]),
-                    yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-1.1, 1.1]),
-                    margin=dict(t=10, b=10, l=10, r=10),
-                    template="plotly_white"
-                ))
+    fig = go.Figure()
     
-    st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
+    # Liens
+    fig.add_trace(go.Scatter(x=edge_x, y=edge_y, line=dict(width=0.4, color='#f0f0f0'), hoverinfo='none', mode='lines'))
+    
+    # Nœuds
+    fig.add_trace(go.Scatter(
+        x=[pos[n][0] for n in G.nodes()], y=[pos[n][1] for n in G.nodes()],
+        mode='markers+text',
+        text=[G.nodes[n].get('label', '') for n in G.nodes()],
+        textposition="top center",
+        marker=dict(color=node_colors, size=node_sizes, line=dict(width=1, color='white')),
+        hoverinfo='text', hovertext=[f"{n} ({counts.get(n,0)} q.)" for n in G.nodes()]
+    ))
+
+    fig.update_layout(
+        showlegend=False, height=800,
+        margin=dict(t=0, b=0, l=0, r=0),
+        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-1.2, 1.2]),
+        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-1.2, 1.2]),
+        template="plotly_white",
+        # INITIALISATION EN MODE PLAN (PAN)
+        dragmode='pan' 
+    )
+    
+    st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True, 'displayModeBar': False})
     
 # --- CHARGEMENT INITIAL POUR LES BORNES DE DATE ---
 data_full = charger_donnees(URL_CSV)
