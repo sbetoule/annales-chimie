@@ -517,8 +517,8 @@ if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container
         
 # --- RÉSULTATS ET DÉTAILS ---
 if st.session_state.resultats_recherche:
-    with st.expander("🗺️ Mind Map des thématiques trouvées", expanded=False):
-        st.write("Les bulles sont regroupées par affinité pédagogique (thèmes souvent liés dans les sujets).")
+    with st.expander("💡 Mind Map des thématiques des sujets trouvées", expanded=False):
+        st.write("Explorez l'architecture des sujets trouvés : l'obscurité des nœuds indique leur importance, tandis que leur position révèle les liens thématiques entre deux questions qui se suivent.")
         afficher_mind_map_thematique(st.session_state.resultats_recherche)
     nb = len(st.session_state.resultats_recherche)
     label_sujet = "sujet trouvé" if nb == 1 else "sujets trouvés"
