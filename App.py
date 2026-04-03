@@ -281,7 +281,7 @@ def afficher_mind_map_thematique(resultats):
 
     fig.add_trace(go.Scatter(
         x=edge_x, y=edge_y, 
-        line=dict(width=0.2, color='#f0f0f0'), 
+        line=dict(width=0.3, color='#f0f0f0'), 
         hoverinfo='none', mode='lines'
     ))
 
@@ -290,7 +290,7 @@ def afficher_mind_map_thematique(resultats):
         text=node_text, textposition="top center",
         textfont=dict(
         size=11, 
-        family="Arial Black, Arial, sans-serif", # Utilisation d'une police plus grasse
+        family="Segoe UI, Roboto, Helvetica, sans-serif",
         color="black" # Noir profond
     ),
     marker=dict(
