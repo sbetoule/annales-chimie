@@ -129,8 +129,24 @@ def recuperer_listes(url_themes, url_niveaux):
         return themes, niveaux
     except: return ["Erreur"], ["facile", "moyen", "difficile"]
 
+@st.cache_data(ttl=60)
+def recuperer_categories_themes(url_themes):
+    try:
+        # On lit les deux premières lignes
+        df_t = pd.read_csv(url_themes, header=None)
+        # Ligne 0 : Les noms des thèmes
+        noms = df_t.iloc[0].dropna().astype(str).tolist()
+        # Ligne 1 : Les catégories (ORGA, GENERALE, etc.)
+        cats = df_t.iloc[1].dropna().astype(str).tolist()
+        
+        # On crée un dictionnaire { 'RMN': 'ORGA', 'Thermo': 'GENERALE', ... }
+        return dict(zip(noms, cats))
+    except:
+        return {}
+        
 with st.spinner("Initialisation des thématiques..."):
     THEMES_LISTE, NIVEAUX_ORDRE = recuperer_listes(URL_THEMES, URL_NIVEAUX)
+    DICT_CATEGORIES = recuperer_categories_themes(URL_THEMES)
 
 if 'resultats_recherche' not in st.session_state: st.session_state.resultats_recherche = None
 if 'nb_filtres' not in st.session_state: st.session_state.nb_filtres = 0
@@ -156,10 +172,9 @@ def charger_donnees(url):
 def afficher_mind_map_thematique(resultats):
     if not resultats: return
 
-    adjacence = {}
+    # --- 1. COMPTAGE ET ADJACENCE ---
     counts = {}
-    
-    # 1. Collecte des données (inchangé mais filtré)
+    adjacence = {}
     for s in resultats:
         themes = [t.strip() for t in s['questions']['Thème'].dropna().astype(str).tolist() 
                   if "autre" not in t.lower() and t.strip() != ""]
@@ -172,87 +187,89 @@ def afficher_mind_map_thematique(resultats):
                     pair = tuple(sorted((t, t_next)))
                     adjacence[pair] = adjacence.get(pair, 0) + 1
 
-    if not counts: return
-
-    # 2. Construction du Graphe
+    # --- 2. CONSTRUCTION DU GRAPHE ---
     G = nx.Graph()
-    G.add_node("CHIMIE", size=max(counts.values())*2, group=0)
-    
+    G.add_node("CHIMIE", size=55, category="CENTRE")
+
     for t, size in counts.items():
-        G.add_node(t, size=size, group=1)
-        # Lien invisible vers le centre pour structurer
-        G.add_edge("CHIMIE", t, weight=0.05) 
+        cat = DICT_CATEGORIES.get(t, "AUTRE").upper()
+        G.add_node(t, size=size, category=cat)
+        G.add_edge("CHIMIE", t, weight=0.1)
 
     for (u, v), weight in adjacence.items():
         if u in G and v in G:
-            G.add_edge(u, v, weight=weight * 0.5)
+            G.add_edge(u, v, weight=weight * 0.3)
 
-    # 3. PHYSIQUE AMÉLIORÉE
-    # k augmenté pour écarter les bulles
-    pos = nx.spring_layout(G, k=2.5/np.sqrt(len(G.nodes())), iterations=100, seed=42)
+    # --- 3. POSITIONNEMENT AVEC POLARITÉ ---
+    # On définit des positions de départ pour forcer la séparation
+    init_pos = {"CHIMIE": (0, 0)}
+    fixed_nodes = ["CHIMIE"]
+    
+    for node, data in G.nodes(data=True):
+        if node == "CHIMIE": continue
+        if data['category'] == "ORGA":
+            init_pos[node] = (np.random.uniform(-0.5, 0.5), 1.0) # Attirance vers le haut
+        elif data['category'] == "GENERALE":
+            init_pos[node] = (np.random.uniform(-0.5, 0.5), -1.0) # Attirance vers le bas
+        else:
+            init_pos[node] = (np.random.uniform(-1, 1), np.random.uniform(-0.2, 0.2))
 
-    # 4. TRACÉ DES LIENS (Fils discrets)
+    # spring_layout avec positions initiales
+    pos = nx.spring_layout(G, k=1.8/np.sqrt(len(G.nodes())), pos=init_pos, fixed=fixed_nodes, iterations=60)
+
+    # --- 4. COULEURS ET RENDU ---
+    # Palette de couleurs stylisée
+    colors = {
+        "ORGA": "#a29bfe",      # Bleu/Violet doux
+        "GENERALE": "#ffcb8e",  # Ambre/Orange doux
+        "CENTRE": "#fc6076",    # Rouge Logo
+        "AUTRE": "#dfe6e9"      # Gris clair
+    }
+
     edge_x, edge_y = [], []
-    for u, v, d in G.edges(data=True):
+    for u, v in G.edges():
         x0, y0 = pos[u]
         x1, y1 = pos[v]
         edge_x.extend([x0, x1, None])
         edge_y.extend([y0, y1, None])
 
-    edge_trace = go.Scatter(x=edge_x, y=edge_y, line=dict(width=0.7, color='#e0e0e0'), hoverinfo='none', mode='lines')
+    edge_trace = go.Scatter(x=edge_x, y=edge_y, line=dict(width=0.5, color='#ecf0f1'), hoverinfo='none', mode='lines')
 
-    # 5. TRACÉ DES BULLES (Nodes)
     node_x, node_y, node_text, node_size, node_color = [], [], [], [], []
-    
-    # On trie pour mettre CHIMIE en dernier (au-dessus)
-    sorted_nodes = sorted(G.nodes(), key=lambda n: n == "CHIMIE")
-
-    for node in sorted_nodes:
+    for node in G.nodes():
         x, y = pos[node]
         node_x.append(x)
         node_y.append(y)
         
-        # Taille logarithmique pour éviter les bulles géantes qui cachent tout
-        raw_size = counts.get(node, 10)
-        display_size = 15 + np.log1p(raw_size) * 10 if node != "CHIMIE" else 55
-        node_size.append(display_size)
+        cat = G.nodes[node]['category']
+        node_color.append(colors.get(cat, colors["AUTRE"]))
         
-        # Texte sélectif : Uniquement thèmes > 1 occurrence ou CHIMIE
+        # Taille log pour l'équilibre
+        s = counts.get(node, 10)
+        node_size.append(50 if node=="CHIMIE" else 15 + np.log1p(s)*10)
+        
+        # Affichage du texte si important
         if node == "CHIMIE" or counts.get(node, 0) > 1:
-            node_text.append(node)
+            node_text.append(f"<b>{node}</b>")
         else:
             node_text.append("")
-            
-        # Couleur dégradée selon l'importance
-        node_color.append("#fc6076" if node == "CHIMIE" else "#3498db")
 
     node_trace = go.Scatter(
         x=node_x, y=node_y, mode='markers+text',
-        text=node_text,
-        textposition="top center",
-        textfont=dict(size=11, family="Poppins"),
-        hoverinfo='text',
-        hovertext=[f"<b>{n}</b><br>{counts.get(n, 0)} questions" for n in sorted_nodes],
-        marker=dict(
-            color=node_color, size=node_size,
-            line=dict(width=2, color='white'),
-            opacity=0.9
-        )
+        text=node_text, textposition="top center",
+        hoverinfo='text', hovertext=[f"{n} ({counts.get(n, 0)} q.)" for n in G.nodes()],
+        marker=dict(color=node_color, size=node_size, line=dict(width=1.5, color='white'))
     )
 
-    # 6. MISE EN PAGE PROPRE
-    fig = go.Figure(data=[edge_trace, node_trace])
-    fig.update_layout(
-        showlegend=False,
-        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-        height=700, # Plus de hauteur pour étaler
-        margin=dict(t=20, b=20, l=20, r=20),
-        template="plotly_white",
-        dragmode='pan' # Permet de se déplacer dans la map
-    )
+    fig = go.Figure(data=[edge_trace, node_trace],
+                 layout=go.Layout(
+                    showlegend=False, height=700, template="plotly_white",
+                    xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                    yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                    margin=dict(t=30, b=30, l=10, r=10)
+                ))
     
-    st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True})
+    st.plotly_chart(fig, use_container_width=True)
     
 # --- CHARGEMENT INITIAL POUR LES BORNES DE DATE ---
 data_full = charger_donnees(URL_CSV)
