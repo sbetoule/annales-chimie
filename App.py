@@ -239,7 +239,7 @@ def afficher_mind_map_thematique(resultats):
 
     # --- 3. POSITIONNEMENT ---
     init_pos = {"CHIMIE": (0, 0), "CHIMIE ORGANIQUE": (0, 0.4), "CHIMIE GÉNÉRALE": (0, -0.4)}
-    pos = nx.spring_layout(G, k=1.3/np.sqrt(len(G.nodes())), pos=init_pos, iterations=150, seed=42)
+    pos = nx.spring_layout(G, k=1.3/np.sqrt(len(G.nodes())), pos=init_pos, iterations=5000, seed=42)
 
     # --- 4. PRÉPARATION DU RENDU (Couleurs, Tailles & Hover) ---
     max_q = max(counts.values()) if counts else 1
@@ -517,8 +517,11 @@ if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container
         
 # --- RÉSULTATS ET DÉTAILS ---
 if st.session_state.resultats_recherche:
-    with st.expander("🗺️ Mind Map des thématiques trouvées", expanded=False):
-        st.write("Les bulles sont regroupées par affinité pédagogique (thèmes souvent liés dans les sujets).")
+    with st.expander("💡 Architecture des sujets trouvés", expanded=False):
+        st.info("""
+**Densité :** Les thèmes les plus fréquents s'affichent avec les couleurs les plus sombres.  
+**Affinité :** Plus les notions se succèdent régulièrement dans les sujets, plus ils apparaissent proches sur le graphe.
+""")
         afficher_mind_map_thematique(st.session_state.resultats_recherche)
     nb = len(st.session_state.resultats_recherche)
     label_sujet = "sujet trouvé" if nb == 1 else "sujets trouvés"
