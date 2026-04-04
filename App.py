@@ -344,7 +344,35 @@ def afficher_mind_map_thematique(resultats):
     # Rendu final interactif
     fig.update_layout(dragmode='pan')
     placeholder.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True, 'displayModeBar': False}, key="final_map")
-
+# --- CHARGEMENT INITIAL POUR LES BORNES DE DATE ---
+data_full = charger_donnees(URL_CSV)
+if data_full:
+    # Extraction de toutes les années sous forme d'entiers pour le tri
+    toutes_annees = sorted(list(set([int(s['annee']) for s in data_full])), reverse=True)
+    annee_max_data = max(toutes_annees)
+    annee_min_data = min(toutes_annees)
+    liste_annees_desc = list(range(annee_max_data, annee_min_data - 1, -1))
+# --- AFFICHAGE ---
+st.markdown("""
+<div class="credits-compact">
+    <span class="credits-qsn">Développé par </span>
+    <b>Sylvain Betoule</b> (Doctorant, Sorbonne Univ.) • 
+    <b>Ulysse Garnier</b> (Doctorant, Sorbonne Univ.) • 
+    <b>Morgane Leite</b> (Resp. prépa agrégation de chimie, ENS) • 
+    <a href="mailto:sylvain.betoule@gmail.com?subject=Annales%20Lab%20Chimie" 
+       style="color: #2c3e50; text-decoration: none; font-weight: bold; font-size: 0.85rem; margin-left: 5px;">
+       📩 Contact
+    </a>
+</div>
+""", unsafe_allow_html=True)
+st.markdown("""
+    <div class="logo-graphic-container">
+        <span class="logo-text-base logo-annales">Annales</span>
+        <span class="logo-lab-badged">Lab</span>
+        <span class="logo-text-base logo-chimie">Chimie</span>
+        <p class="logo-sub-dynamic">Trouvez le sujet sur mesure</p>
+    </div>
+    """, unsafe_allow_html=True)
 with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
     c1, c2, c3 = st.columns(3)
     with c1:
