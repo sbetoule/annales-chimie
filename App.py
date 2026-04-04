@@ -518,7 +518,10 @@ if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container
 # --- RÉSULTATS ET DÉTAILS ---
 if st.session_state.resultats_recherche:
     with st.expander("💡 Architecture des sujets trouvés", expanded=False):
-        st.write("L'obscurité des disques indique l'occurence des thèmes, leur position révèle les liens thématiques entre deux questions qui se suivent au sein d'une même partie.")
+        st.info("""
+**Densité :** Les thèmes les plus fréquents s'affichent avec les couleurs les plus sombres.  
+**Affinité :** Plus les notions se succèdent régulièrement dans les sujets, plus ils apparaissent proches sur le graphe.
+""")
         afficher_mind_map_thematique(st.session_state.resultats_recherche)
     nb = len(st.session_state.resultats_recherche)
     label_sujet = "sujet trouvé" if nb == 1 else "sujets trouvés"
