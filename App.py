@@ -131,23 +131,23 @@ def recuperer_listes(url_themes, url_niveaux):
     except: return ["Erreur"], ["facile", "moyen", "difficile"]
 
 @st.cache_data(ttl=60)
-
-def recuperer_structure_complete(url_themes):
+def recuperer_categories_themes(url_themes):
     try:
+        # On lit les deux premières lignes
         df_t = pd.read_csv(url_themes, header=None)
+        # Ligne 0 : Les noms des thèmes
         noms = df_t.iloc[0].dropna().astype(str).tolist()
+        # Ligne 1 : Les catégories (ORGA, GENERALE, etc.)
         cats = df_t.iloc[1].dropna().astype(str).tolist()
-        sous_themes = df_t.iloc[2].dropna().astype(str).tolist() 
         
-        mapping_cat = dict(zip(noms, cats))
-        mapping_sous = dict(zip(noms, sous_themes))
-        return mapping_cat, mapping_sous
+        # On crée un dictionnaire { 'RMN': 'ORGA', 'Thermo': 'GENERALE', ... }
+        return dict(zip(noms, cats))
     except:
-        return {}, {}
+        return {}
         
 with st.spinner("Initialisation des thématiques..."):
     THEMES_LISTE, NIVEAUX_ORDRE = recuperer_listes(URL_THEMES, URL_NIVEAUX)
-    DICT_CATEGORIES, DICT_SOUS_THEMES = recuperer_structure_complete(URL_THEMES)
+    DICT_CATEGORIES = recuperer_categories_themes(URL_THEMES)
 
 if 'resultats_recherche' not in st.session_state: st.session_state.resultats_recherche = None
 if 'nb_filtres' not in st.session_state: st.session_state.nb_filtres = 0
@@ -189,161 +189,122 @@ def afficher_mind_map_thematique(resultats):
     if not resultats:
         return
 
-    import time
     counts = {}
     adjacence = {}
 
-    # --- 1. CALCUL DES COMPTAGES ET DES LIENS ---
+    # --- 1. CALCUL DE L'ADJACENCE ET DES COMPTAGES (Par Partie) ---
     for s in resultats:
         df_q = s['questions']
-        # On traite par bloc (Partie) si l'info existe, sinon sur tout le sujet
         groupes = df_q.groupby('Partie') if 'Partie' in df_q.columns else [("Unique", df_q)]
         
         for _, data_partie in groupes:
             themes = [t.strip() for t in data_partie['Thème'].dropna().astype(str).tolist() 
-                      if t.strip() != ""]
+                      if "autre" not in t.lower() and t.strip() != ""]
             
             for i in range(len(themes)):
                 t = themes[i]
                 counts[t] = counts.get(t, 0) + 1
-                # Création d'un lien si deux thèmes se suivent
                 if i < len(themes) - 1:
                     t_next = themes[i+1]
                     if t != t_next:
                         pair = tuple(sorted((t, t_next)))
                         adjacence[pair] = adjacence.get(pair, 0) + 1
 
-    # --- 2. CONSTRUCTION DU GRAPHE HIÉRARCHIQUE ---
+    if not counts:
+        return
+
+    # --- 2. CONSTRUCTION DU GRAPHE ---
     G = nx.Graph()
+    G.add_node("CHIMIE", cat="ROOT", label="<b>CHIMIE</b>")
+    G.add_node("CHIMIE ORGANIQUE", cat="ORGA_HUB", label="<b>CHIMIE<br>ORGANIQUE</b>")
+    G.add_node("CHIMIE GÉNÉRALE", cat="GEN_HUB", label="<b>CHIMIE<br>GÉNÉRALE</b>")
     
-    # Niveaux structurels (N0 et N1)
-    G.add_node("CHIMIE", cat="ROOT", label="<b>CHIMIE</b>", lvl=0)
-    G.add_node("CHIMIE ORGANIQUE", cat="ORGA_HUB", label="<b>CHIMIE<br>ORGANIQUE</b>", lvl=1)
-    G.add_node("CHIMIE GÉNÉRALE", cat="GEN_HUB", label="<b>CHIMIE<br>GÉNÉRALE</b>", lvl=1)
-    
-    G.add_edge("CHIMIE", "CHIMIE ORGANIQUE")
-    G.add_edge("CHIMIE", "CHIMIE GÉNÉRALE")
+    G.add_edge("CHIMIE", "CHIMIE ORGANIQUE", weight=3)
+    G.add_edge("CHIMIE", "CHIMIE GÉNÉRALE", weight=3)
 
     for t, count in counts.items():
-        t_clean = t.strip()
-        cat = DICT_CATEGORIES.get(t_clean, "AUTRE").upper()
-        sous_t = DICT_SOUS_THEMES.get(t_clean, "Autre").strip()
-        hub_parent = "CHIMIE ORGANIQUE" if "ORGA" in cat else "CHIMIE GÉNÉRALE"
-
-        # RÈGLE A : Le Thème est "Autre" -> Branchement direct sur le Root (Chimie)
-        if "autre" in t_clean.lower():
-            node_id = f"AUTRE_ROOT_{t_clean}_{cat}" # ID unique technique
-            G.add_node(node_id, cat=cat, count=count, label="Autre", lvl=3)
-            G.add_edge("CHIMIE", node_id)
-            continue
-
-        # RÈGLE B : Le Sous-Thème est "Autre" -> Branchement sur le Hub (Orga ou Générale)
-        if "autre" in sous_t.lower():
-            G.add_node(t_clean, cat=cat, count=count, label=formater_nom_theme(t_clean), lvl=3)
-            G.add_edge(hub_parent, t_clean)
+        cat = DICT_CATEGORIES.get(t, "AUTRE").upper()
+        G.add_node(t, cat=cat, count=count, label=formater_nom_theme(t))
         
-        # CAS GÉNÉRAL : Hub -> Sous-Thème -> Thème
+        if cat == "ORGA":
+            G.add_edge("CHIMIE ORGANIQUE", t, weight=1.5)
+        elif cat == "GENERALE":
+            G.add_edge("CHIMIE GÉNÉRALE", t, weight=1.5)
         else:
-            if not G.has_node(sous_t):
-                G.add_node(sous_t, cat=cat, label=f"<i>{sous_t}</i>", lvl=2)
-                G.add_edge(hub_parent, sous_t)
-            
-            G.add_node(t_clean, cat=cat, count=count, label=formater_nom_theme(t_clean), lvl=3)
-            G.add_edge(sous_t, t_clean)
+            G.add_edge("CHIMIE", t, weight=1.0)
 
-    # Ajout des liens d'affinité (inter-thèmes)
     for (u, v), w in adjacence.items():
         if u in G and v in G:
-            G.add_edge(u, v, weight=w * 0.3)
+            G.add_edge(u, v, weight=w * 0.5)
 
-    # --- 3. POSITIONNEMENT STABLE ---
-    # k augmenté pour aérer la structure à 4 niveaux
-    pos = nx.spring_layout(G, k=2.0/np.sqrt(len(G.nodes())), iterations=200, seed=42)
+    # --- 3. POSITIONNEMENT ---
+    init_pos = {"CHIMIE": (0, 0), "CHIMIE ORGANIQUE": (0, 0.4), "CHIMIE GÉNÉRALE": (0, -0.4)}
+    pos = nx.spring_layout(G, k=1.3/np.sqrt(len(G.nodes())), pos=init_pos, iterations=150, seed=42)
 
-    # --- 4. ANIMATION FLUIDE (SANS CLIGNOTEMENT) ---
-    placeholder = st.empty()
-    
-    # Ordre d'apparition : Hubs -> Sous-thèmes -> Thèmes (triés par fréquence)
-    hubs = [n for n, d in G.nodes(data=True) if d.get('lvl', 3) <= 1]
-    sous_themes = [n for n, d in G.nodes(data=True) if d.get('lvl') == 2]
-    feuilles = sorted([n for n, d in G.nodes(data=True) if d.get('lvl') == 3], 
-                     key=lambda x: G.nodes[x].get('count', 0), reverse=True)
-    
-    # On groupe les feuilles par 2 pour la fluidité
-    chunks_feuilles = [feuilles[i:i + 2] for i in range(0, len(feuilles), 2)]
-    sequence = [hubs] + [sous_themes] + chunks_feuilles
-    
-    noeuds_visibles = []
+    # --- 4. PRÉPARATION DU RENDU (Couleurs, Tailles & Hover) ---
     max_q = max(counts.values()) if counts else 1
-
-    for step_nodes in sequence:
-        noeuds_visibles.extend(step_nodes)
+    node_x, node_y, node_text, node_color, node_size, hover_text = [], [], [], [], [], []
+    
+    for n in G.nodes():
+        node_x.append(pos[n][0])
+        node_y.append(pos[n][1])
+        node_text.append(G.nodes[n].get('label', ''))
         
-        fig = go.Figure()
+        cat = G.nodes[n].get('cat')
+        q = G.nodes[n].get('count', 0)
+        ratio = q / max_q
+        
+        # Masquage des questions pour les thèmes structurels
+        if cat in ["ROOT", "ORGA_HUB", "GEN_HUB"]:
+            hover_text.append(f"<b>{n}</b>")
+            node_size.append(45 if cat=="ROOT" else 32)
+            node_color.append("#fc6076" if cat=="ROOT" else ("#7a7aff" if "ORGA" in cat else "#ffb366"))
+        else:
+            hover_text.append(f"<b>{n}</b><br>{q} questions")
+            node_size.append(22)
+            if cat == "ORGA":
+                node_color.append("#0000bb" if ratio > 0.6 else "#7a7aff" if ratio > 0.2 else "#d1d1ff")
+            elif cat == "GENERALE":
+                node_color.append("#e67e00" if ratio > 0.6 else "#ffb366" if ratio > 0.2 else "#ffe8cc")
+            else:
+                node_color.append("#dfe6e9")
 
-        # Dessin des arrêtes
-        edge_x, edge_y = [], []
-        for u, v in G.edges():
-            if u in noeuds_visibles and v in noeuds_visibles:
-                edge_x.extend([pos[u][0], pos[v][0], None])
-                edge_y.extend([pos[u][1], pos[v][1], None])
+    # --- 5. CALCUL DES LIGNES (Crucial pour éviter NameError) ---
+    edge_x, edge_y = [], []
+    for u, v in G.edges():
+        edge_x.extend([pos[u][0], pos[v][0], None])
+        edge_y.extend([pos[u][1], pos[v][1], None])
 
-        fig.add_trace(go.Scatter(
-            x=edge_x, y=edge_y, 
-            line=dict(width=0.5, color='rgba(200, 200, 200, 0.3)'), 
-            mode='lines', hoverinfo='none'
-        ))
+    # --- 6. CRÉATION FIGURE ---
+    fig = go.Figure()
 
-        # Dessin des noeuds
-        nx_v, ny_v, nt_v, nc_v, ns_v, nh_v = [], [], [], [], [], []
-        for n_id in noeuds_visibles:
-            nx_v.append(pos[n_id][0])
-            ny_v.append(pos[n_id][1])
-            nt_v.append(G.nodes[n_id].get('label', ''))
-            
-            lvl = G.nodes[n_id].get('lvl', 3)
-            cat = G.nodes[n_id].get('cat', 'AUTRE')
-            q = G.nodes[n_id].get('count', 0)
-            
-            # Style selon le niveau
-            if lvl == 0: # CHIMIE
-                ns_v.append(50); nc_v.append("#fc6076"); nh_v.append("<b>RACINE</b>")
-            elif lvl == 1: # HUBS
-                ns_v.append(38); nc_v.append("#7a7aff" if "ORGA" in cat else "#ffb366"); nh_v.append(f"<b>{n_id}</b>")
-            elif lvl == 2: # SOUS-THÈMES
-                ns_v.append(28); nc_v.append("#dfe6e9"); nh_v.append(f"Sous-thème : {n_id}")
-            else: # THÈMES (Feuilles)
-                ratio = q / max_q
-                ns_v.append(22)
-                if "ORGA" in cat:
-                    nc_v.append("#0000bb" if ratio > 0.6 else "#7a7aff" if ratio > 0.2 else "#d1d1ff")
-                else:
-                    nc_v.append("#e67e00" if ratio > 0.6 else "#ffb366" if ratio > 0.2 else "#ffe8cc")
-                nh_v.append(f"<b>{n_id}</b><br>{q} questions")
+    # Ajout des liens
+    fig.add_trace(go.Scatter(
+        x=edge_x, y=edge_y, 
+        line=dict(width=0.3, color='rgba(220, 220, 220, 0.4)'), 
+        hoverinfo='none', mode='lines'
+    ))
 
-        fig.add_trace(go.Scatter(
-            x=nx_v, y=ny_v, mode='markers+text', text=nt_v, 
-            textposition="top center",
-            textfont=dict(size=10, family="Arial", color="black"),
-            marker=dict(color=nc_v, size=ns_v, line=dict(width=1, color='white')),
-            hoverinfo='text', hovertext=nh_v
-        ))
+    # Ajout des nœuds
+    fig.add_trace(go.Scatter(
+        x=node_x, y=node_y, mode='markers+text',
+        text=node_text, textposition="top center",
+        textfont=dict(size=11, family="Segoe UI, Inter, Arial, sans-serif", color="black"),
+        marker=dict(color=node_color, size=node_size, line=dict(width=1.2, color='white')),
+        hoverinfo='text', hovertext=hover_text
+    ))
 
-        # Fixer les axes est la clé pour stopper le clignotement (zoom constant)
-        fig.update_layout(
-            showlegend=False, height=750, margin=dict(t=0, b=0, l=0, r=0),
-            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-1.4, 1.4], fixedrange=True),
-            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-1.4, 1.4], fixedrange=True),
-            template="plotly_white",
-            dragmode=False
-        )
-
-        placeholder.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}, key=f"step_{len(noeuds_visibles)}")
-        time.sleep(0.04)
-
-    # Rendu final interactif
-    fig.update_layout(dragmode='pan')
-    placeholder.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True, 'displayModeBar': False}, key="final_map")
+    fig.update_layout(
+        showlegend=False, height=800,
+        margin=dict(t=0, b=0, l=0, r=0),
+        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-1.15, 1.15]),
+        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-1.15, 1.15]),
+        template="plotly_white",
+        dragmode='pan'
+    )
+    
+    st.plotly_chart(fig, use_container_width=True, config={'scrollZoom': True, 'displayModeBar': False})
+    
 # --- CHARGEMENT INITIAL POUR LES BORNES DE DATE ---
 data_full = charger_donnees(URL_CSV)
 if data_full:
@@ -373,6 +334,7 @@ st.markdown("""
         <p class="logo-sub-dynamic">Trouvez le sujet sur mesure</p>
     </div>
     """, unsafe_allow_html=True)
+
 with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
     c1, c2, c3 = st.columns(3)
     with c1:
@@ -555,11 +517,8 @@ if st.button("🔎 Lancer la recherche d'annales", type="primary", use_container
         
 # --- RÉSULTATS ET DÉTAILS ---
 if st.session_state.resultats_recherche:
-    with st.expander("💡 Architecture des sujets trouvés", expanded=False):
-        st.info("""
-**Densité :** Les thèmes les plus fréquents s'affichent avec les couleurs les plus sombres.  
-**Affinité :** Plus les notions se succèdent régulièrement dans les sujets, plus ils apparaissent proches sur le graphe.
-""")
+    with st.expander("🗺️ Mind Map des thématiques trouvées", expanded=False):
+        st.write("Les bulles sont regroupées par affinité pédagogique (thèmes souvent liés dans les sujets).")
         afficher_mind_map_thematique(st.session_state.resultats_recherche)
     nb = len(st.session_state.resultats_recherche)
     label_sujet = "sujet trouvé" if nb == 1 else "sujets trouvés"
