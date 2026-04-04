@@ -289,7 +289,7 @@ def afficher_mind_map_thematique(resultats):
     fig.add_trace(go.Scatter(
         x=node_x, y=node_y, mode='markers+text',
         text=node_text, textposition="top center",
-        textfont=textfont=dict(
+        textfont=dict(
     size=11, 
     family="Segoe UI, Inter, Arial, sans-serif", 
     color=None  # On laisse Plotly ou Streamlit décider selon le template
