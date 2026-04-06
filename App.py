@@ -239,7 +239,7 @@ def afficher_mind_map_thematique(resultats):
 
     # --- 3. POSITIONNEMENT ---
     init_pos = {"CHIMIE": (0, 0), "CHIMIE ORGANIQUE": (0, 0.4), "CHIMIE GÉNÉRALE": (0, -0.4)}
-    pos = nx.spring_layout(G, k=1.3/np.sqrt(len(G.nodes())), pos=init_pos, iterations=5000, seed=42)
+    pos = nx.spring_layout(G, k=1.3/np.sqrt(len(G.nodes())), pos=init_pos, iterations=500, seed=42)
 
     # --- 4. PRÉPARATION DU RENDU (Couleurs, Tailles & Hover) ---
     max_q = max(counts.values()) if counts else 1
