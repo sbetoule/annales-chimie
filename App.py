@@ -392,7 +392,13 @@ with st.sidebar:
         
         t = st.selectbox(f"Thème", THEMES_LISTE, index=current_default, key=f"t_{n}")
         d_range = st.select_slider(f"Difficulté", options=NIVEAUX_ORDRE, value=(NIVEAUX_ORDRE[s_idx], NIVEAUX_ORDRE[e_idx]), key=f"d_{n}")
-        m = st.number_input(f"Quantité min.", min_value=1, value=1, key=f"m_{n}")
+        m = st.number_input(
+    "Nombre de questions min. de ce thème", 
+    min_value=1, 
+    value=1, 
+    key=f"m_{n}",
+    help="Définit le nombre minimum de questions sur ce thème que le sujet doit contenir pour être sélectionné."
+)
         criteres.append({"theme": t, "diff_range": d_range, "min": m})
 
     if st.session_state.nb_filtres == 0:
