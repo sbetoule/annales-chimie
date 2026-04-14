@@ -342,7 +342,7 @@ st.markdown("""
 with st.expander("👋 Comment utiliser cet outil ?", expanded=True):
     c1, c2, c3 = st.columns(3)
     with c1:
-        st.markdown("**1. Filtres**"); st.info("""⬅️ Utilisez la barre latérale pour sélectionner vos thèmes.""")
+        st.markdown("**1. Filtres**"); st.info("""⬅️ Utilisez la barre latérale pour préciser des critères sur les annales à sélectionner.""")
     with c2:
         st.markdown("**2. Recherche**"); st.info("Cliquez sur le bouton 🔎 **Lancer la recherche**.")
     with c3:
@@ -374,10 +374,16 @@ with st.sidebar:
         )
     st.divider()
     regrouper_par_partie = False 
+    # --- Dans la section BARRE LATÉRALE ---
     if st.session_state.nb_filtres > 0:
-        regrouper_par_partie = st.checkbox(
-            "🎯 Je souhaite que les questions vérifiant ces critères apparaissent dans la même partie du sujet", 
-            value=False)
+    regrouper_par_partie = st.checkbox(
+        "🎯 Questions ciblées dans une même partie du sujet", 
+        value=False,
+        help=(
+            "Si coché, l'outil ne sélectionne que les sujets où toutes les filtres thématiques sont vérifiés au sein d'une seule et même partie."
+            "Si non coché, les questions vérifiants les filtres sont susceptibles d'être dispersées dans tout le sujet, dans des parties indépendantes."
+        )
+    )
     
     criteres = []
     niveaux_lower = [n.lower().strip() for n in NIVEAUX_ORDRE]
