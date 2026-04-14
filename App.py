@@ -376,14 +376,14 @@ with st.sidebar:
     regrouper_par_partie = False 
     # --- Dans la section BARRE LATÉRALE ---
     if st.session_state.nb_filtres > 0:
-    regrouper_par_partie = st.checkbox(
-        "🎯 Questions ciblées dans une même partie du sujet", 
-        value=False,
-        help=(
-            "Si coché, l'outil ne sélectionne que les sujets où toutes les filtres thématiques sont vérifiés au sein d'une seule et même partie."
-            "Si non coché, les questions vérifiants les filtres sont susceptibles d'être dispersées dans tout le sujet, dans des parties indépendantes."
+        regrouper_par_partie = st.checkbox(
+            "🎯 Questions ciblées dans une même partie du sujet", 
+            value=False,
+            help=(
+                "Si coché, l'outil ne sélectionne que les sujets où toutes les filtres thématiques sont vérifiés au sein d'une seule et même partie."
+                "Si non coché, les questions vérifiants les filtres sont susceptibles d'être dispersées dans tout le sujet, dans des parties indépendantes."
+            )
         )
-    )
     
     criteres = []
     niveaux_lower = [n.lower().strip() for n in NIVEAUX_ORDRE]
