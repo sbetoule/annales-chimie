@@ -120,7 +120,7 @@ URL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsADsmsMnYgQXIUlU25_
 URL_THEMES = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsADsmsMnYgQXIUlU25_FlKrtTffM5XOL69taw9Pco8AHV4suIUtT0tg384XBtBAo28qGKGbtSJtIy/pub?gid=1733310474&single=true&output=csv"
 URL_NIVEAUX = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsADsmsMnYgQXIUlU25_FlKrtTffM5XOL69taw9Pco8AHV4suIUtT0tg384XBtBAo28qGKGbtSJtIy/pub?gid=1879771001&single=true&output=csv"
 
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=3600)
 def recuperer_listes(url_themes, url_niveaux):
     try:
         df_t = pd.read_csv(url_themes, header=None)
@@ -130,7 +130,7 @@ def recuperer_listes(url_themes, url_niveaux):
         return themes, niveaux
     except: return ["Erreur"], ["facile", "moyen", "difficile"]
 
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=3600)
 def recuperer_categories_themes(url_themes):
     try:
         # On lit les deux premières lignes
@@ -153,7 +153,7 @@ if 'resultats_recherche' not in st.session_state: st.session_state.resultats_rec
 if 'nb_filtres' not in st.session_state: st.session_state.nb_filtres = 0
 default_theme_index = 3
 
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=3600)
 def charger_donnees(url):
     try:
         df = pd.read_csv(url, header=None, low_memory=False)
