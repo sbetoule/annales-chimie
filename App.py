@@ -16,7 +16,7 @@ st.set_page_config(
         'About': """
             # Annales Lab Chimie
             Outil de recherche d'annales de chimie (CPGE, Agrégation, CAPES, IChO).
-            Développé par Sylvain Betoule, Ulysse Garnier et Morgane Leite.
+            Développé par Sylvain Betoule et Morgane Leite.
         """
     })
 
@@ -322,7 +322,6 @@ st.markdown("""
 <div class="credits-compact">
     <span class="credits-qsn">Développé par </span>
     <b>Sylvain Betoule</b> (Doctorant, Sorbonne Univ.) • 
-    <b>Ulysse Garnier</b> (Doctorant, Sorbonne Univ.) • 
     <b>Morgane Leite</b> (Resp. prépa agrégation de chimie, ENS) • 
     <a href="mailto:sylvain.betoule@gmail.com?subject=Annales%20Lab%20Chimie" 
        style="color: #2c3e50; text-decoration: none; font-weight: bold; font-size: 0.85rem; margin-left: 5px;">
